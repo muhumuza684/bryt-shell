@@ -9,7 +9,7 @@ echo Building the installer...
 call npm run dist
 if errorlevel 1 goto fail
 echo.
-echo Done. Your installer is in the "dist" folder:  Bryt-Shell-Setup-*.exe
+echo Done. Your installer is in the "dist" folder:  Bryt-Shell-Setup.exe
 echo Run it to install Bryt Shell with its own icon, a desktop shortcut and a Start menu entry.
 start "" "%~dp0dist"
 pause & exit /b 0

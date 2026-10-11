@@ -123,7 +123,7 @@ if ($SkipBuild) { Say '  skipped (-SkipBuild)' } else {
 
 # --- 4. install the new one ---
 Step 4 'Installing the new desktop app'
-$installer = Get-ChildItem -Path (Join-Path $root 'dist') -Filter 'Bryt-Shell-Setup-*.exe' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$installer = Get-ChildItem -Path (Join-Path $root 'dist') -Filter 'Bryt-Shell-Setup*.exe' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $installer) {
   if ($DryRun) { Say '  (dry run) the new installer would be opened here' 'Yellow' } else { throw 'No installer found in the dist folder. Run without -SkipBuild.' }
 } else {

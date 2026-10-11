@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.8.3 (2026-10)
+- **One-click, permanent download link:** the installer is now always named `Bryt-Shell-Setup.exe`, so `github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe` always downloads the newest version. The repo front page and the website both have a Download button that uses it
+
 ## 2.8.2 (2026-10)
 - **setup-github.ps1:** first-time GitHub setup in one safe step (checks git and your identity, connects the repository, commits, pushes; never overwrites work already on GitHub without `-Force`)
 - The GitHub release build falls back to `npm install` if `npm ci` fails, so the first release does not stop on a lock-file difference

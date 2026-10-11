@@ -64,7 +64,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
   <div class="tag">The PowerShell that never forgets.</div>
   <p class="lead">Tabbed, named terminals for Windows. Close the window or restart your PC and your history is still there. See at a glance which program failed. Built in Uganda by BrytMa Tech Uganda.</p>
   <div class="cta">
-    <a class="btn solid" id="dl" href="https://github.com/muhumuza684/bryt-shell/releases/latest">Download for Windows</a>
+    <a class="btn solid" id="dl" href="https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe">Download for Windows</a>
     <a class="btn" href="https://github.com/muhumuza684/bryt-shell">View on GitHub</a>
   </div>
   <div class="note"><span id="dlMeta"></span>Windows 10 and 11 · free · Windows may show a one-time "protected your PC" notice because the installer is not code-signed.</div>
@@ -148,7 +148,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
 <section><div class="wrap">
   <h2>Install in a minute</h2>
   <ol class="steps">
-    <li>Download <code>Bryt-Shell-Setup-x.y.z.exe</code> from the <a href="https://github.com/muhumuza684/bryt-shell/releases/latest">latest release</a>.</li>
+    <li>Download <a href="https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe"><code>Bryt-Shell-Setup.exe</code></a> (one click, always the newest version; all versions are on the <a href="https://github.com/muhumuza684/bryt-shell/releases/latest">releases page</a>).</li>
     <li>Run it. If Windows says "Windows protected your PC", click <b>More info</b>, then <b>Run anyway</b>.</li>
     <li>Open <b>Bryt Shell</b> from the desktop shortcut. Choose <b>Life</b> or <b>Engine</b> in the top bar to turn on the lights or the running engine.</li>
   </ol>
@@ -158,7 +158,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
 <section><div class="wrap">
   <h2>About the Windows warning</h2>
   <p class="sub">Bryt Shell's installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC" the first time you run it. That notice appears for new or rarely downloaded apps. Click <b>More info</b>, then <b>Run anyway</b>.</p>
-  <p class="sub"><b>Check your download.</b> Every release has a <code>.sha256</code> file. In PowerShell run <code>Get-FileHash .\Bryt-Shell-Setup-x.y.z.exe -Algorithm SHA256</code> and make sure the result matches. The installer is built by GitHub from the public source code. Code signing is planned.</p>
+  <p class="sub"><b>Check your download.</b> Every release has a <code>.sha256</code> file. In PowerShell run <code>Get-FileHash .\Bryt-Shell-Setup.exe -Algorithm SHA256</code> and make sure the result matches. The installer is built by GitHub from the public source code. Code signing is planned.</p>
 </div></section>
 
 <section><div class="wrap">
@@ -227,15 +227,15 @@ $('bRst').onclick=()=>{clearInterval(tm);tm=null;L=0;$('term').innerHTML='<span 
 paint('idle',0,'<b>Idle.</b> Run a command to fill the tube.');
 </script>
 <script>
-/* keep the download button pointing at the newest release (falls back to the Releases page) */
+/* the Download button is a permanent direct link; this only adds the version, size and date next to it */
 (function(){
   if(typeof fetch!=='function')return;
   var btn=document.getElementById('dl'),meta=document.getElementById('dlMeta');if(!btn)return;
   fetch('https://api.github.com/repos/muhumuza684/bryt-shell/releases/latest',{headers:{Accept:'application/vnd.github+json'}})
     .then(function(r){return r.ok?r.json():Promise.reject(new Error('no release'))})
     .then(function(j){
-      var a=(j.assets||[]).filter(function(x){return /^Bryt-Shell-Setup-.*\.exe$/.test(x.name)})[0];if(!a)return;
-      btn.href=a.browser_download_url;btn.textContent='Download for Windows ('+j.tag_name+')';
+      var a=(j.assets||[]).filter(function(x){return /^Bryt-Shell-Setup.*\.exe$/.test(x.name)})[0];if(!a)return;
+      btn.textContent='Download for Windows ('+j.tag_name+')';
       if(meta){var d=j.published_at?new Date(j.published_at):null;meta.textContent=j.tag_name+' \u00B7 '+Math.round(a.size/1048576)+' MB'+(d&&!isNaN(d)?' \u00B7 '+d.toISOString().slice(0,10):'')+' \u00B7 '}
     }).catch(function(){});
 })();

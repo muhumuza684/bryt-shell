@@ -8,7 +8,14 @@ Tabbed, named, persistent terminals for Windows, with live status lights, a test
 <sub>Built in Uganda by BrytMa Tech Uganda</sub></p>
 
 <p align="center">
-  <a href="https://github.com/muhumuza684/bryt-shell/releases/latest"><b>Download for Windows</b></a> ·
+  <a href="https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe">
+    <img alt="Download Bryt Shell for Windows" src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Download%20for%20Windows-Bryt--Shell--Setup.exe-0b57a4?style=for-the-badge">
+  </a>
+</p>
+<p align="center"><sub>Windows 10 and 11 · free · one file to double-click · <a href="#about-the-windows-warning">about the Windows notice</a></sub></p>
+
+<p align="center">
+  <a href="https://github.com/muhumuza684/bryt-shell/releases/latest">All releases</a> ·
   <a href="https://muhumuza684.github.io/bryt-shell/">Landing page and live demo</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#support">Support</a>
@@ -16,7 +23,7 @@ Tabbed, named, persistent terminals for Windows, with live status lights, a test
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-0b57a4">
-  <img alt="Version" src="https://img.shields.io/badge/version-2.8.2-0b57a4">
+  <img alt="Version" src="https://img.shields.io/badge/version-2.8.3-0b57a4">
   <img alt="Built with" src="https://img.shields.io/badge/built%20with-Electron%20%2B%20xterm.js-0b57a4">
 </p>
 
@@ -185,7 +192,7 @@ All six styles work in both the white and the black theme. The built-in verses a
 
 ### Option A: the installer (recommended)
 
-1. Download `Bryt-Shell-Setup-x.y.z.exe` from the [latest release](https://github.com/muhumuza684/bryt-shell/releases/latest).
+1. Download [`Bryt-Shell-Setup.exe`](https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe) (one click, always the newest version).
 2. Run it. Windows may show **"Windows protected your PC"** because the installer is not code-signed. Click **More info**, then **Run anyway**.
 3. Open **Bryt Shell** from the desktop shortcut or Start menu.
 
@@ -218,18 +225,19 @@ Double-clicking `setup.bat` then `start.bat` does the same. To build the install
 npm run dist
 ```
 
-The result is `dist\Bryt-Shell-Setup-<version>.exe`. The build writes the icon and version info into the `.exe` with a small pure-JavaScript step (`build/afterPack.js`), so it works without Developer Mode or administrator rights.
+The result is `dist\Bryt-Shell-Setup.exe`. The build writes the icon and version info into the `.exe` with a small pure-JavaScript step (`build/afterPack.js`), so it works without Developer Mode or administrator rights.
 
 ## Share Bryt Shell
 
-- **Download link (always the newest version):** https://github.com/muhumuza684/bryt-shell/releases/latest
+- **One-click download (always the newest version):** https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe
+- **Releases page:** https://github.com/muhumuza684/bryt-shell/releases/latest
 - **Website:** https://muhumuza684.github.io/bryt-shell/
 - The installer is built by GitHub from this public source code and attached to each [release](https://github.com/muhumuza684/bryt-shell/releases).
 
 **Check your download.** Each release includes a `.sha256` file. In PowerShell:
 
 ```powershell
-Get-FileHash .\Bryt-Shell-Setup-x.y.z.exe -Algorithm SHA256
+Get-FileHash .\Bryt-Shell-Setup.exe -Algorithm SHA256
 ```
 
 The result must match the text in the `.sha256` file.
