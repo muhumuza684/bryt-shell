@@ -1,0 +1,66 @@
+# Builds the Windows installer on GitHub and publishes it as a Release.
+#
+#   .\release.ps1                (creates the tag for the version in package.json and pushes it)
+#   or by hand:   git tag v2.8.1 ; git push origin v2.8.1
+#
+# Every run also keeps the installer as a downloadable "build artifact" (Actions tab), so you can test
+# a build without publishing it. Publishing to Releases only happens for a version tag.
+# Not code-signed yet: see "Code signing" in the README for the plan.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          if (Test-Path package-lock.json) {
+            npm ci --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { Write-Host 'npm ci failed, falling back to npm install'; npm install --no-audit --no-fund }
+          } else {
+            npm install --no-audit --no-fund
+          }
+
+      - name: Build the installer
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Write SHA-256 checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -Filter 'Bryt-Shell-Setup-*.exe' | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)" | Out-File -Encoding ascii "$($_.FullName).sha256"
+            Write-Host "$h  $($_.Name)"
+          }
+
+      - name: Keep the installer as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bryt-Shell-installer
+          path: |
+            dist/Bryt-Shell-Setup-*.exe
+            dist/Bryt-Shell-Setup-*.exe.sha256
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/Bryt-Shell-Setup-*.exe
+            dist/Bryt-Shell-Setup-*.exe.sha256
+          generate_release_notes: true

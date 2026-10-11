@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bryt Shell | The PowerShell that never forgets</title>
+<meta name="description" content="Bryt Shell is a tabbed, persistent PowerShell terminal for Windows. Name your tabs, keep your history through restarts, and see at a glance what failed. Built in Uganda by BrytMa Tech Uganda.">
+<link rel="icon" href="assets/icon.png">
+<style>
+:root{--blue:#0b57a4;--bg:#f4f5f7;--card:#fff;--text:#111;--muted:#555;--line:#c7ccd4;--tint:#e8f0fa;--red:#e5483c;--amber:#f5a33b;--green:#2fcf74}
+@media (prefers-color-scheme:dark){:root{--blue:#5aa2ee;--bg:#10151c;--card:#171e27;--text:#e6edf3;--muted:#9aa7b5;--line:#2b3644;--tint:#1c2a3a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 Arial,Helvetica,sans-serif}
+a{color:var(--blue)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+.btn{display:inline-block;background:var(--card);color:var(--blue);border:2px solid var(--blue);border-radius:12px;font:700 15px Arial;padding:11px 20px;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--tint)}.btn.solid{background:var(--blue);color:#fff}.btn.solid:hover{filter:brightness(1.1)}
+.btn.sm{padding:7px 12px;font-size:13px}
+header.hero{padding:56px 0 28px;text-align:center}
+.badge{width:64px;height:64px;border-radius:14px;margin:0 auto 14px;display:block}
+h1{margin:0;font-size:46px;line-height:1.1}
+.tag{font-size:22px;margin:10px 0 6px;color:var(--blue);font-weight:700}
+.lead{max-width:640px;margin:0 auto 22px;color:var(--muted)}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.note{font-size:13px;color:var(--muted);margin-top:12px}
+section{padding:34px 0}
+h2{font-size:28px;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 20px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:var(--card);border:2px solid var(--blue);border-radius:14px;padding:16px}
+.card h3{margin:0 0 6px;font-size:17px;color:var(--blue)}
+.card p{margin:0;font-size:14.5px}
+.card img.em{width:34px;height:34px;vertical-align:-10px;margin-right:6px}
+.demo{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;background:var(--card);border:2px solid var(--blue);border-radius:14px;padding:18px}
+.term{background:#0d1117;border-radius:10px;color:#e6edf3;font:13px/1.55 Consolas,"Courier New",monospace;padding:12px;height:230px;overflow:auto;white-space:pre-wrap}
+.g{color:#3fb950}.r{color:#ff7b72}.o{color:#f0883e}.d{color:#8b949e}
+.right{display:flex;gap:16px;align-items:flex-start}
+.signal{display:flex;gap:10px;align-items:center;flex-direction:column}
+.hous{background:#1b2430;border-radius:22px;padding:9px;display:flex;flex-direction:column;gap:9px}
+.lamp{width:30px;height:30px;border-radius:50%;background:currentColor;opacity:.2;transition:.3s}
+.lr{color:#e5483c}.lo{color:#f5a33b}.lg{color:#2fcf74}.lamp.on{opacity:1;box-shadow:0 0 16px 4px currentColor}
+.lamp.lo.on{animation:pulse 1s ease-in-out infinite}@keyframes pulse{50%{opacity:.55}}
+.tubebox{position:relative;width:150px;flex:none}
+#tube{width:150px;height:230px;display:block;color:var(--text)}
+#face{position:absolute;right:-6px;bottom:2px;width:54px;height:54px;filter:drop-shadow(0 3px 4px #0003)}
+#face.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}@keyframes pop{0%{transform:scale(.4) rotate(-12deg);opacity:0}100%{transform:none;opacity:1}}
+#liq{transition:transform .5s ease}
+.run .wave{animation:wv 2s linear infinite}@keyframes wv{to{transform:translateX(-80px)}}
+.bub{opacity:0}.run .bub{animation:bub 2.4s ease-in infinite}@keyframes bub{0%{transform:translateY(0);opacity:.8}100%{transform:translateY(-150px);opacity:0}}
+.dctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#msg{font-size:14px;margin-top:10px;min-height:22px}
+.shots{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.shots img{width:100%;height:auto;border-radius:12px;border:2px solid var(--blue);display:block}
+.cmp{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+ol.steps{padding-left:20px}ol.steps li{margin:8px 0}
+code{background:var(--tint);padding:2px 6px;border-radius:6px;font-size:14px}
+details{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:700}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
+@media (max-width:760px){.demo{grid-template-columns:1fr}h1{font-size:36px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<header class="hero"><div class="wrap">
+  <img class="badge" src="assets/icon.png" alt="Bryt Shell icon">
+  <h1>Bryt Shell</h1>
+  <div class="tag">The PowerShell that never forgets.</div>
+  <p class="lead">Tabbed, named terminals for Windows. Close the window or restart your PC and your history is still there. See at a glance which program failed. Built in Uganda by BrytMa Tech Uganda.</p>
+  <div class="cta">
+    <a class="btn solid" id="dl" href="https://github.com/muhumuza684/bryt-shell/releases/latest">Download for Windows</a>
+    <a class="btn" href="https://github.com/muhumuza684/bryt-shell">View on GitHub</a>
+  </div>
+  <div class="note"><span id="dlMeta"></span>Windows 10 and 11 · free · Windows may show a one-time "protected your PC" notice because the installer is not code-signed.</div>
+</div></header>
+
+<section><div class="wrap">
+  <h2>See it work</h2>
+  <p class="sub">This is "Life" (choose it in the top bar), running here in your browser. Press a button.</p>
+  <div class="demo" id="demo">
+    <div class="signal" aria-label="Status lights">
+      <div class="hous"><div class="lamp lr" id="lr"></div><div class="lamp lo" id="lo"></div><div class="lamp lg" id="lg"></div></div>
+      <small style="color:var(--muted)">Signal</small>
+    </div>
+    <div>
+      <div class="right">
+        <div class="tubebox">
+          <img id="face" src="assets/face_idle.png" alt="">
+          <svg id="tube" viewBox="0 0 230 372" role="img" aria-label="Engine test tube showing progress">
+            <defs><clipPath id="tc"><path d="M32 12H108V300a38 38 0 0 1-76 0Z"/></clipPath>
+            <linearGradient id="gl" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity=".4"/></linearGradient></defs>
+            <g clip-path="url(#tc)"><g id="liq" style="transform:translateY(345px);color:#8aa4c0">
+              <path class="wave" d="M-80 0q20-8 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0V400H-80Z" fill="currentColor"/>
+              <g fill="#fff"><circle class="bub" cx="48" cy="150" r="4"/><circle class="bub" cx="80" cy="170" r="3" style="animation-delay:.8s"/><circle class="bub" cx="64" cy="140" r="5" style="animation-delay:1.5s"/></g>
+            </g></g>
+            <path d="M32 12H108V300a38 38 0 0 1-76 0Z" fill="url(#gl)" stroke="#7fa6cf" stroke-width="3"/>
+            <path d="M43 24V285" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+            <rect x="26" y="6" width="88" height="9" rx="4.5" fill="url(#gl)" stroke="#7fa6cf" stroke-width="2.5"/>
+            <g id="pin" style="display:none"><line x1="32" x2="108" stroke="#e5483c" stroke-width="2.5" stroke-dasharray="5 3"/><circle cx="70" r="11" fill="#e5483c"/><text x="70" y="4.5" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">!</text></g>
+          </svg>
+        </div>
+        <div class="term" id="term" style="flex:1" aria-live="polite"><span class="d">PS D:\project&gt; </span></div>
+      </div>
+      <div id="msg"><b>Idle.</b> Run a command to fill the tube.</div>
+      <div class="dctl">
+        <button class="btn sm" id="bOk">▶ Run a passing command</button>
+        <button class="btn sm" id="bBad">▶ Run a failing command</button>
+        <button class="btn sm" id="bRst">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Why people use it</h2>
+  <p class="sub">Made for anyone who runs many programs at once and hates losing their place.</p>
+  <div class="grid">
+    <div class="card"><h3>Never lose your work</h3><p>Every tab keeps its full history on your disk. Restart the PC and your tabs, names and logs come back.</p></div>
+    <div class="card"><h3>Name everything</h3><p>Real titles for tabs like "airflow" or "api-server". Rename, delete, search a log, or export it to a file.</p></div>
+    <div class="card"><h3>Know what failed</h3><p>Traffic lights and a glass test tube show running, success and errors across all tabs. Ctrl+C is never shown as an error.</p></div>
+    <div class="card"><h3>Start things for you</h3><p>Give a tab a startup command and it runs by itself after a restart, even before you open the window.</p></div>
+    <div class="card"><h3>Run as admin</h3><p>One click opens an elevated workspace with its own tabs and logs, kept separate from your normal ones.</p></div>
+    <div class="card"><h3>A running engine</h3><p>Choose Engine and a real-looking engine fills the left and right of the window. It spins while your command runs and jams, with sparks, when it fails.</p></div>
+    <div class="card"><h3>Faith, tucked into Settings</h3><p>Optional Christian or Islamic styling with three styles each, King James or Arabic verses, and a place to paste your own verses. Hidden until you switch it on.</p></div>
+    <div class="card"><h3>One experience at a time</h3><p>Plain, Life or Engine from the header, Faith from Settings. Choosing one turns the others off, so the window never feels crowded.</p></div>
+    <div class="card"><h3>Your colors, kept tidy</h3><p>Three themes (Ivory, White, Black) and, folded away under Appearance, an accent color picker and a terminal color picker. Buttons are bright and clear in every theme.</p></div>
+    <div class="card"><h3>Private by design</h3><p>No accounts and no network connections of its own. Everything stays on your PC.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>What it looks like</h2>
+  <p class="sub">Real screenshots of the Ivory design: the engine filling the window, a failed command in Life, the Appearance page with its folded-away colors, Faith inside Settings with the paste-your-verses editor, and the black theme with an Arabic verse.</p>
+  <div class="grid shots">
+    <a href="screenshots/engine.jpg"><img src="screenshots/engine.jpg" alt="Bryt Shell with the engine running in the left and right columns"></a>
+    <a href="screenshots/life.jpg"><img src="screenshots/life.jpg" alt="Life after a failed command: red light and crying face"></a>
+    <a href="screenshots/appearance.jpg"><img src="screenshots/appearance.jpg" alt="Settings, Appearance: themes and color pickers"></a>
+    <a href="screenshots/settings-faith.jpg"><img src="screenshots/settings-faith.jpg" alt="Settings, Faith page with My verses"></a>
+    <a href="screenshots/faith-islam-dark.jpg"><img src="screenshots/faith-islam-dark.jpg" alt="The black theme with the Islamic Midnight style and an Arabic verse"></a>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>You choose what happens when you close the window</h2>
+  <p class="sub">Switch any time with the Mode button. Bryt Shell explains both in plain words.</p>
+  <div class="cmp">
+    <div class="card"><h3><img class="em" src="assets/sleep.png" alt="">Closes with window</h3><p>Programs stop when you close the window. Nothing runs in the background, so no CPU is used. Your saved logs come back next time.</p></div>
+    <div class="card"><h3><img class="em" src="assets/devil.png" alt="">Daemon (keeps running)</h3><p>Programs keep running in the background after you close the window, so long jobs are never interrupted. When you close, it asks whether to keep or stop them, and it quits by itself after 5 idle minutes.</p></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Install in a minute</h2>
+  <ol class="steps">
+    <li>Download <code>Bryt-Shell-Setup-x.y.z.exe</code> from the <a href="https://github.com/muhumuza684/bryt-shell/releases/latest">latest release</a>.</li>
+    <li>Run it. If Windows says "Windows protected your PC", click <b>More info</b>, then <b>Run anyway</b>.</li>
+    <li>Open <b>Bryt Shell</b> from the desktop shortcut. Choose <b>Life</b> or <b>Engine</b> in the top bar to turn on the lights or the running engine.</li>
+  </ol>
+  <p class="sub">Prefer building it yourself? The <a href="https://github.com/muhumuza684/bryt-shell#build-from-source">README</a> has the exact steps.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>About the Windows warning</h2>
+  <p class="sub">Bryt Shell's installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC" the first time you run it. That notice appears for new or rarely downloaded apps. Click <b>More info</b>, then <b>Run anyway</b>.</p>
+  <p class="sub"><b>Check your download.</b> Every release has a <code>.sha256</code> file. In PowerShell run <code>Get-FileHash .\Bryt-Shell-Setup-x.y.z.exe -Algorithm SHA256</code> and make sure the result matches. The installer is built by GitHub from the public source code. Code signing is planned.</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Questions</h2>
+  <p class="sub">Twenty questions, including why PowerShell is stronger than most people think.</p>
+  <details><summary>What is Bryt Shell?</summary><p>Bryt Shell is a tabbed PowerShell terminal for Windows that remembers your work. Every tab has a name, keeps its full history on disk, and can keep running in the background after you close the window. Optional status lights, a test tube and a running-engine display show you what is happening at a glance.</p></details>
+  <details><summary>Why use it instead of the normal PowerShell window?</summary><p>A normal window forgets everything when you close it or restart the PC. Bryt Shell restores your tabs, names and history, shows which tab failed, can start commands for you, and lets long jobs keep running when the window is closed.</p></details>
+  <details><summary>Is my data sent anywhere?</summary><p>No. Bryt Shell makes no network connections of its own and has no accounts or telemetry. Your logs stay on your PC. In Daemon mode the window and the background service talk over a private local pipe that only accepts a random token stored in your profile folder.</p></details>
+  <details><summary>Where are my logs and settings stored?</summary><p>In <code>%APPDATA%\Bryt Shell</code>. Normal tabs live in the <code>user</code> folder and the administrator workspace in <code>admin</code>. Each tab's log is a <code>.log</code> file in its <code>logs</code> folder, and <code>recipes.json</code> sits next to them. Appearance choices are kept inside the app.</p></details>
+  <details><summary>What happens to my tabs when I restart the PC?</summary><p>Windows ends every program at a restart, and no app can prevent that. What you get back is every tab, its name and its full history. Tabs that have a Startup command run it again, and with Start at login (installed app, Daemon mode) they can start by themselves before you even open the window.</p></details>
+  <details><summary>What is the difference between Daemon mode and Closes with window?</summary><p>In <b>Closes with window</b>, programs stop when you close the window and nothing runs in the background. In <b>Daemon</b> mode a small background service owns your terminals, so programs keep running after you close the window and you reattach when you reopen it. Change it any time from the Mode chip at the top (Change mode) or in Settings, General.</p></details>
+  <details><summary>Will Daemon mode slow my PC?</summary><p>The background service is idle and light, and it quits by itself after 5 minutes if no window is open and nothing is running. Programs you leave running use their own CPU, so Bryt Shell asks what to do each time you close the window. The engine and other animations pause when the window is hidden.</p></details>
+  <details><summary>How do I name, rename or delete a tab?</summary><p>Click <b>+</b> and type a name. Double-click a tab to rename it. Click the <b>×</b> on a tab to delete it; its saved log is deleted too, after you confirm.</p></details>
+  <details><summary>How do I run a command automatically when a tab starts?</summary><p>Click <b>Startup command</b>, type the command (for example <code>docker compose up</code>) and press OK. It runs whenever that tab's shell starts, including after a restart. In the installed app with Daemon mode, Settings, General, Start at login runs those tabs silently when you sign in.</p></details>
+  <details><summary>How do I run as administrator?</summary><p>Click <b>Run as admin</b> and accept the Windows permission prompt. Bryt Shell reopens as administrator with its own separate tabs and logs, so elevated sessions never mix with normal ones.</p></details>
+  <details><summary>What do the lights, the test tube and the faces mean?</summary><p>Choose Life in the top bar (or in Settings, Life). Life, Engine and Faith are one-at-a-time experiences, so choosing one turns the others off. The traffic light covers all tabs: red if any tab failed, orange if any is running, green if all finished fine. The test tube shows the active tab: it fills as the command runs, turns green on success and red with a pin where it failed. The faces are a smile when idle, a thinking face while running, happy on success, crying on failure, and neutral when you stopped it yourself with Ctrl+C. A command you stop yourself is never counted as an error.</p></details>
+  <details><summary>How does Bryt Shell know a command failed?</summary><p>At each prompt PowerShell knows whether the last command succeeded. Bryt Shell starts every shell with a small wrapper that prints standard OSC 133 marks when a command starts and finishes, including that success flag, and reads them. Your own prompt (for example oh-my-posh) keeps working.</p></details>
+  <details><summary>How do I teach the test tube my own commands?</summary><p>Settings, Life, <b>Edit level recipes</b> opens <code>recipes.json</code>. A recipe has a <code>match</code> pattern for the command and a list of levels, each with an <code>on</code> pattern that is looked for in the output. A level counts as reached the first time its pattern appears. Unknown commands show a steady tube and turn green or red when they finish.</p></details>
+  <details><summary>Why is PowerShell stronger than most people think? (objects, not text)</summary><p>PowerShell's pipeline passes live .NET objects, not plain text. <code>Get-Process | Where-Object CPU -gt 100 | Sort-Object CPU -Descending | Select-Object -First 5 Name, CPU</code> filters and sorts by real properties, with no text parsing and no fragile column cutting.</p></details>
+  <details><summary>Can PowerShell manage other computers?</summary><p>Yes. <code>Invoke-Command -ComputerName server01 -ScriptBlock { Get-Service }</code> runs commands on another machine (PowerShell remoting), and PowerShell 7 can also remote over SSH with <code>Enter-PSSession -HostName</code>. One script can manage many machines at once.</p></details>
+  <details><summary>Can PowerShell use the whole .NET platform?</summary><p>Yes. Any .NET class is available: <code>[System.IO.Path]::GetTempPath()</code>, <code>[guid]::NewGuid()</code>, <code>[Math]::Round(3.14159, 2)</code>, and <code>Add-Type</code> can even compile C# on the fly. That is why PowerShell can do jobs other shells need extra tools for.</p></details>
+  <details><summary>Can PowerShell work with web APIs and data files?</summary><p>Yes. <code>Invoke-RestMethod https://api.example.com/items</code> returns objects already parsed from JSON, <code>ConvertFrom-Json</code> and <code>ConvertTo-Json</code> convert data, and <code>Import-Csv</code> and <code>Export-Csv</code> read and write CSV files. Pipe the results straight into other commands.</p></details>
+  <details><summary>Can PowerShell run work in parallel or in the background?</summary><p>Yes. <code>Start-Job</code> runs work in the background, and PowerShell 7 adds <code>ForEach-Object -Parallel</code> and <code>Start-ThreadJob</code>, for example <code>1..20 | ForEach-Object -Parallel { $_ * 2 } -ThrottleLimit 5</code>.</p></details>
+  <details><summary>How do I find commands and learn what they do?</summary><p><code>Get-Command *service*</code> finds commands, <code>Get-Help Get-Service -Examples</code> shows examples, and <code>Get-Member</code> shows every property and method of whatever is in the pipeline. Commands follow a Verb-Noun pattern, so they are consistent and guessable. Run <code>Update-Help</code> once to download the full help.</p></details>
+  <details><summary>What else makes PowerShell strong for real projects?</summary><p>Modules and the PowerShell Gallery (<code>Install-Module</code>), safe scripting features (functions with typed, validated parameters, <code>try/catch/finally</code>, and <code>-WhatIf</code> and <code>-Confirm</code> for risky commands), and it runs on Windows, Linux and macOS in PowerShell 7. Bryt Shell uses PowerShell 7 when it is installed and falls back to Windows PowerShell 5.1, and your profile still loads.</p></details>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Need help?</h2>
+  <p class="sub">Write to us. Inside the app, Settings, Support opens a pre-filled email and copies your system details.</p>
+  <p><a class="btn solid" href="mailto:muhumuzabright26@gmail.com?subject=Bryt%20Shell%20support">muhumuzabright26@gmail.com</a></p>
+</div></section>
+
+<footer>Built in Uganda by BrytMa Tech Uganda · <a href="https://github.com/muhumuza684/bryt-shell">GitHub</a> · <a href="mailto:muhumuzabright26@gmail.com">Support</a></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const Y=l=>345-329*l,COL={idle:'#8aa4c0',run:'#f5a33b',ok:'#2fcf74',fail:'#e5483c'};
+let L=0,tm=null,kind=null;
+function paint(state,level,msg){
+  $('liq').style.transform='translateY('+Y(level)+'px)';$('liq').style.color=COL[state];
+  $('tube').classList.toggle('run',state==='run');
+  $('lr').classList.toggle('on',state==='fail');$('lo').classList.toggle('on',state==='run');$('lg').classList.toggle('on',state==='ok');
+  $('pin').style.display=state==='fail'?'':'none';if(state==='fail')$('pin').setAttribute('transform','translate(0 '+Y(level)+')');
+  const f=$('face'),src='assets/face_'+({idle:'idle',run:'run',ok:'ok',fail:'fail'}[state])+'.png';
+  if(!f.getAttribute('src').endsWith(src.slice(7))){f.src=src;f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop')}
+  $('msg').innerHTML=msg;
+}
+function log(h){const t=$('term');t.insertAdjacentHTML('beforeend',h+'\n');t.scrollTop=t.scrollHeight}
+function run(k){
+  if(tm)return;kind=k;L=0;
+  log(k==='ok'?'npm run build':'npm test');paint('run',.06,'<b>Running</b> · level 1 of 4');
+  const names=['Install','Build','Test','Deploy'];let last=-1;
+  tm=setInterval(()=>{
+    L+=.012;const lv=Math.min(3,Math.floor(L*4));
+    if(lv!==last){last=lv;log('<span class="o">▶ Level '+(lv+1)+': '+names[lv]+'…</span>')}
+    paint('run',L,'<b>Running</b> · level '+(lv+1)+' of 4: '+names[lv]);
+    if(k==='bad'&&L>=.62){clearInterval(tm);tm=null;
+      log('<span class="r">✖ Level 3 (Test) failed\n  AssertionError: expected 200, got 500</span>\n<span class="d">PS D:\\project&gt; </span>');
+      paint('fail',.62,'<b style="color:#e5483c">Failed</b> at level 3: Test. The red pin shows where.');return}
+    if(L>=1){clearInterval(tm);tm=null;log('<span class="g">✔ Done: all 4 levels passed</span>\n<span class="d">PS D:\\project&gt; </span>');paint('ok',1,'<b style="color:#1f9d55">Success.</b> All 4 levels passed.')}
+  },80);
+}
+$('bOk').onclick=()=>run('ok');$('bBad').onclick=()=>run('bad');
+$('bRst').onclick=()=>{clearInterval(tm);tm=null;L=0;$('term').innerHTML='<span class="d">PS D:\\project&gt; </span>';paint('idle',0,'<b>Idle.</b> Run a command to fill the tube.')};
+paint('idle',0,'<b>Idle.</b> Run a command to fill the tube.');
+</script>
+<script>
+/* keep the download button pointing at the newest release (falls back to the Releases page) */
+(function(){
+  if(typeof fetch!=='function')return;
+  var btn=document.getElementById('dl'),meta=document.getElementById('dlMeta');if(!btn)return;
+  fetch('https://api.github.com/repos/muhumuza684/bryt-shell/releases/latest',{headers:{Accept:'application/vnd.github+json'}})
+    .then(function(r){return r.ok?r.json():Promise.reject(new Error('no release'))})
+    .then(function(j){
+      var a=(j.assets||[]).filter(function(x){return /^Bryt-Shell-Setup-.*\.exe$/.test(x.name)})[0];if(!a)return;
+      btn.href=a.browser_download_url;btn.textContent='Download for Windows ('+j.tag_name+')';
+      if(meta){var d=j.published_at?new Date(j.published_at):null;meta.textContent=j.tag_name+' \u00B7 '+Math.round(a.size/1048576)+' MB'+(d&&!isNaN(d)?' \u00B7 '+d.toISOString().slice(0,10):'')+' \u00B7 '}
+    }).catch(function(){});
+})();
+</script>
+</body></html>

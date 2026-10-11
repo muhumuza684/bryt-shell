@@ -1,0 +1,81 @@
+{
+  "name": "brytma-shell",
+  "productName": "Bryt Shell",
+  "version": "2.8.2",
+  "description": "Bryt Shell: a tabbed, persistent PowerShell terminal for Windows. Built in Uganda by BrytMa Tech Uganda.",
+  "author": "BrytMa Tech Uganda",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-search": "^0.15.0",
+    "@lydell/node-pty": "1.2.0-beta.15"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0",
+    "resedit": "^3.1.0",
+    "pe-library": "^2.0.1"
+  },
+  "build": {
+    "appId": "ug.brytma.shell",
+    "productName": "Bryt Shell",
+    "copyright": "Built in Uganda by BrytMa Tech Uganda",
+    "artifactName": "Bryt-Shell-Setup-${version}.${ext}",
+    "afterPack": "build/afterPack.js",
+    "asarUnpack": [
+      "node_modules/@lydell/**"
+    ],
+    "npmRebuild": false,
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bryt Shell",
+      "runAfterFinish": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "files": [
+      "main.js",
+      "daemon.js",
+      "ptycore.js",
+      "preload.js",
+      "index.html",
+      "package.json",
+      "assets/**",
+      "THIRD-PARTY-NOTICES.txt"
+    ]
+  },
+  "homepage": "https://muhumuza684.github.io/bryt-shell/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhumuza684/bryt-shell.git"
+  },
+  "bugs": {
+    "url": "https://github.com/muhumuza684/bryt-shell/issues"
+  },
+  "keywords": [
+    "terminal",
+    "powershell",
+    "windows",
+    "electron",
+    "xterm",
+    "conpty",
+    "persistent-sessions"
+  ]
+}

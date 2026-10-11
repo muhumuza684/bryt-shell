@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Bryt Shell | BrytMa Tech Uganda</title>
+<link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+<style>
+:root{--blue:#0b57a4;--bg:#f4f5f7;--text:#111;--muted:#555;--red:#b3261e;--card:#fff;--tint:#e8f0fa;--line:#c7ccd4;--hover:#f0f6fc;--body:#333;--term:#0d1117;--sky1:#cfe8ff;--sky2:#f6fbff;--w1:#9fd8ff;--w2:#3b9ad9;--w3:#1f6fb0;--ground:#6dbb5a}
+:root[data-theme="dark"]{color-scheme:dark;--blue:#5aa2ee;--bg:#000;--text:#ececf0;--muted:#9a9aa6;--red:#ff6b5f;--card:#0b0b0d;--tint:#101a2b;--line:#2b2b33;--hover:#14233a;--body:#cfcfd6;--term:#000;--sky1:#050d1c;--sky2:#0a1a33;--w1:#0d3b66;--w2:#0a2748;--w3:#06182f;--ground:#2c6a3a}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;align-items:center;padding:10px 16px 8px}
+.wrap{width:100%;max-width:1100px;display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
+header{display:flex;align-items:center;gap:12px}
+.badge{width:38px;height:38px;border-radius:8px;background:var(--blue);color:#fff;font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center}
+.name{font-weight:700;font-size:18px;line-height:1.15}.sub{font-size:12px;color:var(--muted)}
+.sp{flex:1}
+.btn{background:var(--card);color:var(--blue);border:2px solid var(--blue);border-radius:12px;font:700 13px Arial;padding:8px 14px;cursor:pointer}
+.btn:hover{background:var(--tint)}.btn.red{background:var(--red);border-color:var(--red);color:#fff}.btn.red:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:default}
+#tabs{display:flex;gap:8px;align-items:center;overflow-x:auto;padding:2px}
+.tab{display:flex;align-items:center;gap:10px;padding:7px 12px;border:2px solid var(--blue);border-radius:12px;background:var(--card);color:var(--blue);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;max-width:220px}
+.tab span{overflow:hidden;text-overflow:ellipsis}.tab.on{background:var(--blue);color:#fff}
+.tab b{font-size:15px;line-height:1;padding:0 3px;border-radius:50%}.tab b:hover{background:#ffffff40}
+.tab:not(.on) b:hover{background:#0b57a420}
+#add{padding:5px 13px;font-size:18px}
+#host{flex:1;min-height:0;position:relative;background:var(--term);border:2px solid var(--blue);border-radius:12px;padding:8px}
+.term{position:absolute;inset:8px;display:none}.term.on{display:block}
+#row{display:flex;gap:10px;align-items:center}
+#row #tabs{flex:1;min-width:0}
+#tools{display:flex;gap:8px;flex-shrink:0}
+.btn.sm{padding:6px 10px;font-size:12px}
+.btn.armed{background:var(--blue);color:#fff}
+#sbar{display:none;position:absolute;top:14px;right:26px;z-index:5;gap:6px;align-items:center;background:var(--card);border:2px solid var(--blue);border-radius:12px;padding:6px}
+#sbar.on{display:flex}
+#sq{width:200px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:13px Arial;outline:none}
+#sq:focus{border-color:var(--blue)}
+#modal{display:none;position:fixed;inset:0;background:#0006;z-index:20;align-items:center;justify-content:center}
+#modal.on{display:flex}
+#modal .box{background:var(--card);color:var(--text);border:2px solid var(--blue);border-radius:12px;padding:16px;width:380px;display:flex;flex-direction:column;gap:10px}
+#mt{font-weight:700;font-size:14px}
+#mi{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:14px Arial;outline:none}
+#mi:focus{border-color:var(--blue)}
+#modal .mb{display:flex;justify-content:flex-end;gap:8px}
+#mmodal{display:none;position:fixed;inset:0;background:#0006;z-index:20;align-items:center;justify-content:center}
+#mmodal.on{display:flex}
+#mmodal .box{background:var(--card);color:var(--text);border:2px solid var(--blue);border-radius:12px;padding:18px;width:520px;max-width:92vw;display:flex;flex-direction:column;gap:12px}
+#mmt{font-weight:700;font-size:15px}
+.opt{border:2px solid var(--blue);border-radius:12px;padding:10px 14px;cursor:pointer}
+.opt:hover{background:var(--hover)}
+.opt.cur{background:var(--tint);cursor:default}
+.opt b{font-size:14px;color:var(--blue)}
+.opt .tag{float:right;font-size:11px;font-weight:700;color:#fff;background:var(--blue);border-radius:8px;padding:2px 8px}
+.opt p{margin:6px 0 0;font-size:13px;line-height:1.45;color:var(--body)}
+.hint{font-size:12px;color:var(--muted)}
+#mmodal .mb{display:flex;justify-content:flex-end;gap:8px}
+#stage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:12px}
+#stage.side{grid-template-columns:210px minmax(0,1fr) 260px}
+.wrap.side{max-width:1560px}
+.rail{display:none;flex-direction:column;gap:12px;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#stage.side .rail{display:flex;animation:lin .4s ease}
+@keyframes lin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (max-width:1000px){#stage.side{grid-template-columns:minmax(0,1fr)}#stage.side .rail{display:none}}
+.panel{background:var(--card);border:2px solid var(--blue);border-radius:12px;padding:12px}
+.panel h3{margin:0 0 2px;font-size:13px;color:var(--blue);text-transform:uppercase;letter-spacing:.05em}
+.panel .hint{font-size:11px;color:var(--muted);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.em{width:20px;height:20px;vertical-align:-5px;margin-right:6px}.em.big{width:30px;height:30px;vertical-align:-9px}
+.dot{display:none;width:9px;height:9px;border-radius:50%;flex:none}
+body.lifeon .dot.g{display:inline-block;background:#2fcf74}body.lifeon .dot.r{display:inline-block;background:#e5483c}
+body.lifeon .dot.o{display:inline-block;background:#f5a33b;animation:pulse 1s ease-in-out infinite}body.lifeon .dot.x{display:inline-block;background:#8aa4c0}
+.tab.on .dot{box-shadow:0 0 0 2px #fff}
+.tl{display:flex;gap:12px;align-items:center}
+.hous{background:#1b2430;border-radius:24px;padding:10px;display:flex;flex-direction:column;gap:10px;box-shadow:inset 0 0 0 2px #2e3b4c}
+.lamp{width:36px;height:36px;border-radius:50%;background:currentColor;opacity:.2;transition:opacity .3s,box-shadow .3s}
+.lr{color:#e5483c}.lo{color:#f5a33b}.lg{color:#2fcf74}
+.lamp.on{opacity:1;box-shadow:0 0 20px 5px currentColor}.lo.on{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55;box-shadow:0 0 8px 1px currentColor}}
+.cnt{display:flex;flex-direction:column;gap:20px;font-size:12px;color:var(--muted)}
+.cnt b{display:block;font-size:22px;color:var(--text);line-height:1}
+.ev{list-style:none;margin:8px 0 0;padding:0;font-size:12px;display:flex;flex-direction:column;gap:7px}
+.ev li{display:flex;gap:8px;align-items:flex-start}.ev i{width:9px;height:9px;border-radius:50%;margin-top:4px;flex:none}
+.ev small{color:var(--muted);display:block;font-size:11px}
+#tube{display:block;width:100%;height:min(44vh,380px);color:var(--text)}
+.tubewrap{position:relative}
+#face{position:absolute;right:2px;bottom:6px;width:62px;height:62px;filter:drop-shadow(0 3px 4px #0003);pointer-events:none}
+#face.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.4) rotate(-12deg);opacity:0}100%{transform:none;opacity:1}}
+#face.run{animation:bob 1.6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px) rotate(5deg)}}
+.run .wave{animation:wv 2s linear infinite}@keyframes wv{to{transform:translateX(-80px)}}
+.bub{opacity:0}.run .bub{animation:bub 2.4s ease-in infinite}
+@keyframes bub{0%{transform:translateY(0);opacity:.8}100%{transform:translateY(-150px);opacity:0}}
+#liq{transition:transform .6s ease}
+.status{margin-top:8px;border-radius:10px;padding:8px 10px;font-size:12px;border:2px solid var(--line);background:var(--tint);line-height:1.5}
+.status.ok{border-color:#2fcf74}.status.bad{border-color:#e5483c}.status.run{border-color:#f5a33b}
+.status b{display:block;font-size:13px}.status .btn{margin-top:6px}
+body.paused *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.run .wave,.run .bub,.lo.on,.dot.o,#face{animation:none!important}}
+
+:root{--font:'Segoe UI','Helvetica Neue',system-ui,sans-serif;--r:8px;--gold:#d1a22a;--onaccent:#1c1912;--onblue:#fff;--goldtext:#7d5f10;--bg:#faf6ee;--card:#fffdf8;--text:#1c1912;--muted:#5d5444;--line:#e1d6bd;--tint:#f4ecda;--hover:#f8f1e1;--blue:#17324f;--term:#14161c;--red:#a8321f;--body:#4a4336;--btn:#fffdf8;--btnb:#cbbb94;--btnh:#fbefcb}
+:root[data-theme="white"]{--bg:#ffffff;--card:#ffffff;--text:#111827;--muted:#4b5563;--line:#e3e7ee;--tint:#f3f5f9;--hover:#f1f4f9;--blue:#1f2937;--body:#374151;--btn:#ffffff;--btnb:#c3cad6;--btnh:#fdf3d4}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0b0a08;--card:#14110c;--text:#f6f0e0;--muted:#bdb3a0;--line:#2f2a1e;--tint:#1d1910;--hover:#241f13;--blue:#e2bb52;--gold:#e2bb52;--onaccent:#14110a;--onblue:#14110a;--goldtext:#e2bb52;--term:#070706;--red:#ff7a66;--body:#ddd5c2;--btn:#1f1b12;--btnb:#574d34;--btnh:#2e2716}
+header{flex-wrap:wrap;row-gap:8px}
+.btn{white-space:nowrap}
+.btn svg,.chip svg,.exp svg,.theme svg{width:16px;height:16px;vertical-align:-3px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#mmodal,#modal{z-index:40}
+#stage{position:relative}
+.lifeonly{display:none}body.lifeon .lifeonly{display:block}
+/* ---- running engine in the side columns ---- */
+:root{--m1:#f1f4f8;--m2:#b7c1cd;--m3:#7d8896;--edge:#4a5563;--bore:#2b323c;--p1:#eef2f7;--p2:#cbd5e1;--bz1:#e6b87b;--bz2:#a8672b}
+:root[data-theme="dark"]{--m1:#d3dbe5;--m2:#8794a3;--m3:#4d5866;--edge:#080b0f;--bore:#05070a;--p1:#18212c;--p2:#05080c;--bz1:#d9a566;--bz2:#8f541f}
+.eng{display:none;position:relative;border:2px solid var(--blue);border-radius:12px;overflow:hidden;background:linear-gradient(var(--p1),var(--p2));min-height:0}
+#stage.side .eng{display:none}body.sc-engine #stage.side .eng{display:block}
+#engL{grid-area:1/1}#engR{grid-area:1/3}
+#stage.side #railL{grid-area:1/1}#stage.side #host{grid-area:1/2}#stage.side #railR{grid-area:1/3}
+.rail{position:relative;z-index:1}
+body.sc-engine .panel{background:color-mix(in srgb,var(--card) 90%,transparent)}
+.eng svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.eng:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,transparent 55%,#0000002e 100%)}
+.eng.crash{box-shadow:inset 0 0 46px #e5483ca0}
+.eng.crash svg{animation:shake .65s ease-out 1}
+.eng.crash:before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(circle,#ff3b2266,transparent 70%);animation:flash 1s ease-out 1 forwards}
+@keyframes shake{0%{transform:none}14%{transform:translate(-4px,3px) rotate(-.6deg)}28%{transform:translate(5px,-3px) rotate(.6deg)}42%{transform:translate(-3px,2px)}60%{transform:translate(2px,-1px)}100%{transform:none}}
+@keyframes flash{from{opacity:1}to{opacity:0}}
+.spk{stroke-linecap:round;animation:spk .9s ease-out 1 forwards}
+@keyframes spk{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--tx),var(--ty))}}
+@media (max-width:1000px){#stage.side .eng{display:none!important}}
+/* ---- verses strip ---- */
+.vstrip{display:none;position:relative;height:34px;overflow:hidden;border:2px solid var(--blue);border-radius:10px;background:var(--tint);margin:0 0 2px}
+body.sc-verses .vstrip{display:block}
+#vtxt{position:absolute;top:0;left:0;height:100%;display:flex;align-items:center;white-space:nowrap;font:italic 700 15px Georgia,'Times New Roman',serif;color:var(--blue);animation:vm 90s linear infinite;will-change:transform}
+@keyframes vm{from{transform:translateX(-100%)}to{transform:translateX(var(--vw,1000px))}}
+html[data-fp^="i"] .vstrip{height:42px}
+html[data-fp^="i"] #vtxt{direction:rtl;font:700 22px/1 'Traditional Arabic','Sakkal Majalla','Amiri','Noto Naskh Arabic','Segoe UI','DejaVu Sans',serif;letter-spacing:0}
+/* ---- settings ---- */
+#settings{display:none;position:fixed;inset:0;background:#0008;z-index:30;align-items:center;justify-content:center}
+#settings.on{display:flex}
+.sbox{width:min(1000px,95vw);height:min(660px,92vh);background:var(--card);color:var(--text);border:2px solid var(--blue);border-radius:16px;display:flex;overflow:hidden;box-shadow:0 24px 70px #0007}
+.snav{width:196px;background:var(--tint);padding:14px 10px;display:flex;flex-direction:column;gap:3px;flex:none;overflow:auto}
+.snav .sh{font:700 11px Arial;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:12px 12px 6px}
+.snav .sh:first-child{padding-top:4px;font-size:15px;letter-spacing:0;text-transform:none;color:var(--text)}
+.snav button{text-align:left;background:none;border:0;color:var(--text);font:600 14px Arial;padding:9px 12px;border-radius:10px;cursor:pointer}
+.snav button:hover{background:var(--hover)}.snav button.on{background:var(--blue);color:var(--onblue)}
+.spanes{flex:1;position:relative;overflow:auto;padding:24px 28px 28px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.sx{position:absolute;right:14px;top:12px;width:32px;height:32px;border-radius:50%;border:0;background:var(--tint);color:var(--text);font:700 18px Arial;cursor:pointer}
+.sx:hover{background:var(--hover)}
+.pane{display:none}.pane.on{display:block}
+.pane h2{margin:0 0 4px;font-size:23px}.pane .lead{color:var(--muted);margin:0 0 16px;font-size:14px;line-height:1.5}
+.pane h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:22px 0 6px}
+.srow{display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.srow .t{flex:1}.srow .t b{display:block;font-size:14.5px}.srow .t span{font-size:13px;color:var(--muted);line-height:1.45}
+.sw{position:relative;width:46px;height:26px;flex:none}
+.sw input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:26px;transition:.2s}
+.sw span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px #0004}
+.sw input:checked+span{background:var(--blue)}.sw input:checked+span:before{transform:translateX(20px)}
+.sw input:disabled{cursor:not-allowed}.sw input:disabled+span{opacity:.5}
+.seg{display:inline-flex;border:2px solid var(--blue);border-radius:12px;overflow:hidden}
+.seg button{background:none;border:0;padding:8px 20px;font:700 13px Arial;color:var(--blue);cursor:pointer}.seg button.on{background:var(--blue);color:var(--onblue)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0}
+.card{border:2px solid var(--line);border-radius:14px;padding:14px 12px;text-align:center;cursor:pointer;background:var(--card);color:var(--text);font:inherit}
+.card:hover{border-color:var(--blue)}.card.on{border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 28%,transparent)}
+.card svg{width:34px;height:34px;color:var(--blue);display:block;margin:0 auto 6px}.card b{display:block;font-size:14px}.card small{color:var(--muted);font-size:12px}
+.fsw{height:78px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--bg);margin-bottom:8px;border:1px solid var(--line)}
+.fsw i{font:700 18px Georgia,serif;font-style:normal;padding:9px 16px;background:var(--card);color:var(--blue);border:2px solid var(--blue);border-radius:10px;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px var(--gold,var(--blue))}
+.faces{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0;text-align:center;font-size:12px;color:var(--muted)}.faces img{width:44px;height:44px;display:block;margin:0 auto 4px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:14px;margin:6px 0}.kv div:nth-child(odd){color:var(--muted)}
+ul.ab{margin:6px 0;padding-left:20px;line-height:1.7;font-size:14px}
+.faq details{border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin:8px 0}
+.faq summary{cursor:pointer;font-weight:700;font-size:14.5px}.faq details[open]{border-color:var(--blue);background:var(--tint)}
+.faq p{margin:8px 0 2px;font-size:14px;line-height:1.55;color:var(--body)}
+.faq code,.pane code{background:var(--tint);padding:2px 6px;border-radius:6px;font-size:13px}
+.mailbox{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid var(--blue);border-radius:14px;padding:14px 16px;margin:10px 0}
+.mailbox b{font-size:17px;word-break:break-all}
+/* ---- faith palettes (also used by the small previews) ---- */
+[data-fp="c1"]{--blue:#1f4e9c;--gold:#b8902f;--bg:#f3f6fb;--card:#fff;--tint:#e6eefb;--hover:#eef3fb}
+[data-fp="c2"]{--blue:#6d28d9;--gold:#2563eb;--bg:#f6f3fd;--card:#fff;--tint:#efe9fb;--hover:#f4effd}
+[data-fp="c3"]{--blue:#7a4a10;--gold:#b8860b;--bg:#f1e8cf;--card:#fbf5e3;--tint:#efe3c3;--hover:#f5ecd2;--line:#d8c8a0;--text:#2a1c08;--muted:#6b5a3a}
+[data-fp="i1"]{--blue:#0b6b4f;--gold:#c9a227;--bg:#eef5f1;--card:#fff;--tint:#e0f0e8;--hover:#ebf6f0}
+[data-fp="i2"]{--blue:#14305a;--gold:#b8902f;--bg:#f6f3ea;--card:#fffdf7;--tint:#e9edf5;--hover:#f0f3f9;--line:#d6d2c4}
+[data-fp="i3"]{--blue:#0f6b73;--gold:#a07a2c;--bg:#f3ead7;--card:#fbf6ea;--tint:#ece1c8;--hover:#f3ead5;--line:#dccfae;--text:#2a2416;--muted:#6b6048}
+html[data-theme="dark"][data-fp="c1"],html[data-theme="dark"] [data-fp="c1"]{--blue:#7ea6e8;--gold:#d8b45a;--bg:#000;--card:#0a0e16;--tint:#0f1b30;--hover:#13233f}
+html[data-theme="dark"][data-fp="c2"],html[data-theme="dark"] [data-fp="c2"]{--blue:#a78bfa;--gold:#60a5fa;--bg:#000;--card:#0d0a16;--tint:#1a1230;--hover:#21183d}
+html[data-theme="dark"][data-fp="c3"],html[data-theme="dark"] [data-fp="c3"]{--blue:#d9a441;--gold:#e0b84f;--bg:#0b0805;--card:#16100a;--tint:#241a0e;--hover:#2d2112;--line:#3a2c18;--text:#f1e6cc;--muted:#b3a27c}
+html[data-theme="dark"][data-fp="i1"],html[data-theme="dark"] [data-fp="i1"]{--blue:#3fc59a;--gold:#d8b45a;--bg:#000;--card:#07110d;--tint:#0d2219;--hover:#11301f}
+html[data-theme="dark"][data-fp="i2"],html[data-theme="dark"] [data-fp="i2"]{--blue:#7fa8e0;--gold:#d8b45a;--bg:#03070f;--card:#08111f;--tint:#0e1c34;--hover:#13264a;--line:#22304a}
+html[data-theme="dark"][data-fp="i3"],html[data-theme="dark"] [data-fp="i3"]{--blue:#4fb7bf;--gold:#c9a64f;--bg:#080d0e;--card:#0f1819;--tint:#16282a;--hover:#1c3234;--line:#27403f;--text:#eee6d2;--muted:#a79d84}
+html[data-fp] .panel,html[data-fp] #host,html[data-fp] .vstrip{box-shadow:inset 0 0 0 3px var(--inset,var(--card)),inset 0 0 0 4px var(--gold)}
+html[data-fp] #host{--inset:var(--term)}
+html[data-fp] .term{inset:17px}
+html[data-fp] #host:after{content:"";position:absolute;inset:5px;pointer-events:none;z-index:3;background:var(--k1) left top no-repeat,var(--k2) right top no-repeat,var(--k3) right bottom no-repeat,var(--k4) left bottom no-repeat;background-size:24px 24px}
+html[data-fp^="c"] .name,html[data-fp^="c"] .pane h2{font-family:Georgia,'Times New Roman',serif}
+html[data-fp="c2"] .panel,html[data-fp="c2"] .vstrip{border:2px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(135deg,#7c3aed,#2563eb,#059669,#d97706,#dc2626) border-box}
+html[data-fp="c2"] #host{border:2px solid transparent;background:linear-gradient(var(--term),var(--term)) padding-box,linear-gradient(135deg,#7c3aed,#2563eb,#059669,#d97706,#dc2626) border-box}
+html[data-fp="c2"] .vstrip{background:linear-gradient(var(--tint),var(--tint)) padding-box,linear-gradient(135deg,#7c3aed,#2563eb,#059669,#d97706,#dc2626) border-box}
+html[data-fp="i1"] .vstrip{background-image:var(--pat);background-color:var(--tint)}
+html[data-fp="i2"] .vstrip{background-image:var(--pat);background-color:var(--tint)}
+@media (prefers-reduced-motion:reduce){.eng *,.vstrip *{animation:none!important}}
+
+/* ================= IVORY SKIN ================= */
+body{font-family:var(--font);background:var(--bg);padding:14px 22px 10px}
+.wrap{max-width:1560px;gap:14px}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:2px 2px 14px;border-bottom:1px solid var(--line)}
+.exp{position:relative;display:flex;gap:4px;justify-self:start;padding-bottom:6px}
+.exp button{display:flex;gap:8px;align-items:center;padding:6px 13px;color:var(--muted);font:600 14px var(--font);background:none;border:0;cursor:pointer;letter-spacing:.01em}
+.exp button:hover{color:var(--text)}.exp button.on{color:var(--text)}.exp button svg{opacity:.85}
+.exp .thumb{position:absolute;bottom:-2px;height:2px;left:var(--x,0);width:var(--w,60px);background:var(--gold);border-radius:2px;transition:left .3s,width .3s}
+.brand{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;white-space:nowrap}
+.brand .name{font:600 27px/1 Georgia,'Times New Roman',serif;letter-spacing:.01em}
+.brand .sub{font-size:10.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--goldtext);font-weight:700}
+.right{justify-self:end;display:flex;gap:8px;align-items:center}
+.theme{display:flex;border:1px solid var(--gold);border-radius:999px;padding:3px;background:var(--btn);box-shadow:0 1px 2px #0000001a}
+.theme button{display:flex;gap:7px;align-items:center;padding:6px 14px;border-radius:999px;font:700 13px var(--font);color:var(--muted);background:none;border:0;cursor:pointer}.theme button:hover{color:var(--text)}
+.theme button.on{background:var(--gold);color:var(--onaccent);box-shadow:0 1px 3px #0003}
+.chip,.btn{white-space:nowrap;background:var(--btn);color:var(--text);border:1px solid var(--btnb);border-radius:999px;font:700 13px var(--font);padding:7px 15px;display:inline-flex;gap:7px;align-items:center;cursor:pointer;box-shadow:0 1px 2px #0000001a;transition:background .15s,border-color .15s,transform .05s}
+.chip:hover,.btn:hover{border-color:var(--gold);background:var(--btnh)}.chip:active,.btn:active{transform:translateY(1px)}
+.chip svg,.btn svg{color:var(--goldtext)}
+.chip.primary,.btn.primary{background:var(--gold);border-color:var(--gold);color:var(--onaccent)}.chip.primary:hover,.btn.primary:hover{filter:brightness(1.07);background:var(--gold)}.chip.primary svg,.btn.primary svg{color:var(--onaccent)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn.sm{padding:6px 13px;font-size:12.5px}.btn.red{background:var(--red);border-color:var(--red);color:#fff}.btn.red:hover{filter:brightness(1.08)}
+.btn.armed{background:var(--gold);color:var(--onaccent);border-color:var(--gold)}
+.btn:disabled,.chip:disabled{opacity:.6;cursor:default}
+.chip.adm-on{background:var(--red);border-color:var(--red);color:#fff}
+.menuwrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:190px;box-shadow:0 18px 40px #0003;z-index:30;display:none}
+.menu.on{display:block}.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;background:none;border:0;color:var(--text);font:600 13px var(--font);cursor:pointer}
+.menu button:hover{background:var(--hover)}.menu button.danger{color:var(--red)}
+#row{display:flex;gap:12px;align-items:flex-end;border-bottom:1px solid var(--line)}
+#row #tabs{flex:0 1 auto;min-width:0;max-width:calc(100% - 60px);display:flex;gap:2px;align-items:flex-end;overflow-x:auto;scrollbar-width:none}
+#row #tabs.ovf{padding-right:34px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+#tabs::-webkit-scrollbar{display:none}
+.tab{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:11px 16px;margin-bottom:-1px;font:600 13.5px var(--font);gap:9px}
+.tab:hover{color:var(--text)}.tab.on{background:none;color:var(--text);border-bottom-color:var(--gold)}
+.tab b{opacity:.35;font-weight:400}.tab b:hover,.tab:not(.on) b:hover{background:var(--hover);opacity:1}.tab.on .dot{box-shadow:none}
+#addSlot{flex:none;padding-bottom:6px;margin-right:auto}
+#add{width:30px;height:30px;padding:0;border-radius:50%;justify-content:center;font-size:18px;color:var(--muted)}
+#tools{margin-left:auto;gap:2px;align-items:center;padding-bottom:6px;position:relative;flex:none}
+#moreBtn{padding:7px 10px}
+#host{border:1px solid var(--line);border-radius:var(--r);padding:8px}
+.panel{border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.panel h3{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:.14em;color:var(--goldtext)}
+.status{border-color:var(--line)}.status.ok{border-color:#2fcf74}.status.bad{border-color:#e5483c}.status.run{border-color:#f5a33b}
+.eng{border:1px solid var(--line);border-radius:var(--r)}
+.vstrip{border:1px solid var(--gold);background:transparent;border-radius:var(--r)}
+#sbar{border:1px solid var(--line);border-radius:12px}
+#modal .box,#mmodal .box{border:1px solid var(--line);border-radius:14px}
+.opt{border:1px solid var(--line);border-radius:12px}.opt.cur{border-color:var(--gold)}.opt .tag{background:var(--gold)}.opt b{color:var(--text)}
+.sbox{border:1px solid var(--line);border-radius:16px}
+.snav button.on{background:var(--blue);color:var(--onblue)}
+.seg{border:1px solid var(--gold);border-radius:999px}.seg button{color:var(--muted)}.seg button.on{background:var(--gold);color:var(--onaccent)}
+.card{border-radius:12px}.card.on{border-color:var(--gold)}.card svg{color:var(--gold)}
+.cards.two{grid-template-columns:repeat(2,1fr)}
+.vrow{display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap}
+#mine{width:100%;height:120px;resize:vertical;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 12px;font:13.5px/1.55 Georgia,serif}
+#mine:focus{outline:2px solid color-mix(in srgb,var(--gold) 50%,transparent)}
+.pane h2{font-family:Georgia,'Times New Roman',serif;font-weight:600}
+footer{color:var(--muted)}
+@media (max-width:1260px){.theme button span,#admT{display:none}.theme button{padding:6px 11px}.chip{padding:7px 12px}#modeT{max-width:120px}}
+@media (max-width:1060px){#settingsBtn span{display:none}.exp button{padding:6px 9px}.brand .name{font-size:23px}}
+@media (max-width:1000px){header{grid-template-columns:1fr auto}.brand{grid-column:1;grid-row:1}.exp{grid-column:1/-1;grid-row:2;justify-self:center}.right{grid-column:2;grid-row:1}}
+.tsw{height:64px;border-radius:10px;margin-bottom:8px;border:1px solid var(--line);display:flex;align-items:flex-end;padding:8px;gap:5px}
+.tsw i{display:block;height:8px;border-radius:4px;flex:1}.tsw i:first-child{flex:2}
+.fold{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:0 16px}.fold summary{cursor:pointer;padding:14px 0;font-weight:700;font-size:14.5px;list-style:none}.fold summary::-webkit-details-marker{display:none}
+.fold summary:after{content:"\25BE";float:right;color:var(--muted)}.fold[open] summary:after{content:"\25B4"}.fold[open]{padding-bottom:14px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0 10px}
+.sw1{width:32px;height:32px;border-radius:50%;border:2px solid var(--card);box-shadow:0 0 0 1px var(--btnb);cursor:pointer;padding:0;position:relative;flex:none}
+.sw1:hover{transform:scale(1.08)}.sw1.on{box-shadow:0 0 0 3px var(--gold)}
+.sw1.custom{background:conic-gradient(#e5483c,#f5a33b,#e3d02f,#2fcf74,#2fb6cf,#5a5ae8,#c24bd6,#e5483c);overflow:hidden}
+.sw1.custom input{position:absolute;inset:-6px;width:44px;height:44px;opacity:0;cursor:pointer;border:0;padding:0}
+.swl{font-size:12px;color:var(--muted)}
+#banner{display:none;border:2px solid var(--red);color:var(--red);background:var(--card);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700}
+footer{text-align:center;font-size:12px;color:var(--muted);padding-top:8px}
+</style></head><body>
+<div id="modal"><div class="box"><div id="mt"></div><input id="mi" maxlength="60"><div class="mb"><button class="btn sm" id="mc">Cancel</button><button class="btn sm armed" id="mo">OK</button></div></div></div>
+<div id="mmodal"><div class="box">
+  <div id="mmt">What should happen to your programs when you close the window?</div>
+  <div class="opt" id="optN"><span class="tag" id="tagN">Current</span><b><img class="em big" src="assets/emoji/sleep.png" alt=""> Closes with window</b>
+    <p>Programs stop when you close the window. <b>Nothing runs in the background</b>, so no CPU is used once it is closed. Your saved logs come back next time, but programs must be started again.</p></div>
+  <div class="opt" id="optD"><span class="tag" id="tagD">Current</span><b><img class="em big" src="assets/emoji/devil.png" alt=""> Daemon (keeps running)</b>
+    <p>Programs <b>keep running in the background</b> after you close the window, so long jobs are not interrupted. The background service itself is idle and light, but every program you leave running keeps using its own CPU until you stop it. Each time you close the window, Bryt Shell asks whether to keep or stop them. It also quits by itself after 5 minutes if nothing is running.</p></div>
+  <div class="hint">Switching stops the programs running right now and restarts the app. Saved logs are kept.</div>
+  <div class="mb"><button class="btn sm" id="forget" style="display:none">Ask me again when I close</button><button class="btn sm" id="mmc">Close</button></div>
+</div></div>
+<div id="settings" role="dialog" aria-modal="true" aria-label="Settings"><div class="sbox">
+  <nav class="snav">
+    <div class="sh">Settings</div>
+    <button data-p="general" class="on">General</button>
+    <button data-p="appearance">Appearance</button>
+    <button data-p="life">Life</button>
+    <button data-p="engine">Engine</button>
+    <button data-p="faith">Faith</button>
+    <div class="sh">Help</div>
+    <button data-p="support">Support</button>
+    <button data-p="about">About</button>
+    <button data-p="faq">FAQ</button>
+  </nav>
+  <div class="spanes">
+    <button class="sx" id="sclose" aria-label="Close settings">×</button>
+
+    <section class="pane on" id="p-general"><h2>General</h2><p class="lead">How Bryt Shell behaves when you close the window and when you sign in to Windows.</p>
+      <div class="srow"><div class="t"><b>When I close the window</b><span id="modeNow"></span></div><button class="btn sm" id="modeChange">Change</button></div>
+      <div class="srow"><div class="t"><b>Start at login</b><span id="autostartNote">Starts Bryt Shell silently when you sign in to Windows, runs the Startup command of each tab, then stays in the background. Works in the installed app with Daemon mode.</span></div><label class="sw"><input type="checkbox" id="autostart"><span></span></label></div>
+      <div class="srow" id="quitRow" style="display:none"><div class="t"><b>Quit and stop everything</b><span>Stops every program running in the background and closes Bryt Shell. Daemon mode only.</span></div><button class="btn sm" id="quitFromSettings">Quit &amp; stop all</button></div>
+      <div class="srow" id="forgetRow" style="display:none"><div class="t"><b>Close prompt</b><span>You chose to remember what happens to your programs when you close the window.</span></div><button class="btn sm" id="forget2">Ask me again</button></div>
+    </section>
+
+    <section class="pane" id="p-appearance"><h2>Appearance</h2><p class="lead">Pick a look. Everything else is tucked away under Colors.</p>
+      <h3>Theme</h3>
+      <div class="cards" id="themeCards">
+        <button class="card" data-th="light"><div class="tsw" style="background:#faf6ee"><i style="background:#17324f"></i><i style="background:#d1a22a"></i><i style="background:#e1d6bd"></i></div><b>Ivory</b><small>Warm and light</small></button>
+        <button class="card" data-th="white"><div class="tsw" style="background:#ffffff"><i style="background:#1f2937"></i><i style="background:#d1a22a"></i><i style="background:#e3e7ee"></i></div><b>White</b><small>Clean and bright</small></button>
+        <button class="card" data-th="dark"><div class="tsw" style="background:#0b0a08"><i style="background:#e2bb52"></i><i style="background:#e2bb52"></i><i style="background:#2f2a1e"></i></div><b>Black</b><small>Warm black</small></button>
+      </div>
+      <details class="fold" id="colorsFold"><summary>Colors</summary>
+        <div class="srow"><div class="t"><b>Accent color</b><span>Buttons, highlights and the underline. Faith styles use their own colors while Faith is on.</span></div></div>
+        <div class="swatches" id="accentSw"></div>
+        <div class="srow"><div class="t"><b>Terminal color</b><span>The background of the terminal. The text color adjusts automatically.</span></div></div>
+        <div class="swatches" id="termSw"></div>
+        <div class="vrow"><button class="btn sm" id="colorsReset">Reset colors</button></div>
+      </details>
+    </section>
+
+    <section class="pane" id="p-life"><h2>Life</h2><p class="lead">Live status for your commands: traffic lights across all tabs, a glass test tube for the active tab, a state face, a dot on every tab and a list of what finished recently.</p>
+      <div class="srow"><div class="t"><b>Show Life</b><span>Red beats orange beats green. Stopping a command yourself with Ctrl+C is never shown as an error. Life is one of the experiences, so turning it on turns Engine and Faith off.</span></div><label class="sw"><input type="checkbox" id="setLife"><span></span></label></div>
+      <h3>The faces</h3>
+      <div class="faces"><div><img src="assets/emoji/face_idle.png" alt="">Idle</div><div><img src="assets/emoji/face_run.png" alt="">Running</div><div><img src="assets/emoji/face_ok.png" alt="">Success</div><div><img src="assets/emoji/face_fail.png" alt="">Failed</div><div><img src="assets/emoji/face_stop.png" alt="">Stopped by you</div></div>
+      <div class="srow"><div class="t"><b>Level recipes</b><span>Teach the test tube the steps of your own commands (<code>recipes.json</code>).</span></div><button class="btn sm" id="recipes2">Edit level recipes</button></div>
+    </section>
+
+    <section class="pane" id="p-engine"><h2>Engine</h2><p class="lead">A running engine fills the left and right side of the window: meshing gear trains, a V-twin crank with pistons and rods, a flywheel with its starter pinion, a belt drive and a camshaft with valves. It runs while a command runs. If the command fails, the engine jams.</p>
+      <div class="srow"><div class="t"><b>Show the engine</b><span>It only animates while a command is running, and pauses when the window is hidden. Turning it on turns Life and Faith off.</span></div><label class="sw"><input type="checkbox" id="setEngine"><span></span></label></div>
+      <div class="srow"><div class="t"><b>Preview</b><span>Closes this window so you can watch it, then returns to normal.</span></div><div><button class="btn sm" id="prevRun">▶ Run</button> <button class="btn sm" id="prevCrash">✖ Crash</button></div></div>
+    </section>
+
+    <section class="pane" id="p-faith"><h2>Faith</h2><p class="lead">Optional, and kept out of the way. A quiet layer of styled frames and a strip of verses above the terminal. It is one of the experiences, so turning it on turns Life and Engine off.</p>
+      <div class="srow"><div class="t"><b>Use Faith</b><span>Nothing is shown unless you switch this on.</span></div><label class="sw"><input type="checkbox" id="setFaithOn"><span></span></label></div>
+      <div id="faithBox" style="display:none">
+        <h3>Tradition</h3>
+        <div class="cards two" id="faithCards">
+          <button class="card on" data-f="christian"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2h4v7h7v4h-7v9h-4v-9H3V9h7z"/></svg><b>Christianity</b><small>King James verses</small></button>
+          <button class="card" data-f="islam"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.2 3.1a9 9 0 1 0 5.7 14.6 7.3 7.3 0 0 1-5.7-14.6z"/><path d="M18.5 6.2l.9 1.9 2.1.3-1.5 1.5.4 2.1-1.9-1-1.9 1 .4-2.1-1.5-1.5 2.1-.3z"/></svg><b>Islam</b><small>Arabic verses</small></button>
+        </div>
+        <h3>Style</h3><div class="cards" id="styleCards"></div>
+        <div class="srow"><div class="t"><b>Show verses</b><span id="versesNote"></span></div><label class="sw"><input type="checkbox" id="setVerses"><span></span></label></div>
+        <h3>My verses</h3>
+        <p class="lead" style="margin-bottom:8px">Paste the verses you love, one per line. Add a reference after a dash if you like, for example <code>Be still, and know that I am God. &mdash; Psalm 46:10</code>. Your verses are kept for each tradition.</p>
+        <textarea id="mine" spellcheck="false" placeholder="The LORD is my shepherd; I shall not want. &mdash; Psalm 23:1&#10;Be still, and know that I am God. &mdash; Psalm 46:10"></textarea>
+        <div class="vrow"><div class="seg" id="vmode"><button data-m="add">Add to built-in</button><button data-m="only">Only mine</button></div><button class="btn sm" id="saveV">Save verses</button><span class="hint" id="vcount"></span></div>
+      </div>
+    </section>
+
+    <section class="pane" id="p-support"><h2>Support</h2><p class="lead">Most questions are answered in the FAQ. If yours is not, or something is not working, write to us.</p>
+      <div class="mailbox"><div><small style="color:var(--muted)">Email</small><br><b id="supMail">muhumuzabright26@gmail.com</b></div><div style="flex:1"></div>
+        <button class="btn sm" id="supEmail">Write an email</button><button class="btn sm" id="supCopy">Copy address</button></div>
+      <h3>Help us help you</h3>
+      <ul class="ab"><li>What you did, what you expected, and what happened instead.</li><li>A screenshot if it is a visual problem.</li><li>Your system details: the button below copies them (no personal data, no logs).</li></ul>
+      <button class="btn sm" id="supInfo">Copy system details</button> <button class="btn sm" id="supFaq">Open the FAQ</button>
+      <p class="lead" style="margin-top:16px">Verses are short extracts shown as reminders. If you spot a spelling mistake in any verse, please tell us and we will correct it.</p>
+    </section>
+
+    <section class="pane" id="p-about"><h2>About Bryt Shell</h2><p class="lead">A persistent, tabbed PowerShell terminal for Windows. Built in Uganda by BrytMa Tech Uganda.</p>
+      <h3>What it can do</h3>
+      <ul class="ab">
+        <li><b>Real terminals.</b> Full PowerShell through Windows ConPTY: colors, completion, Ctrl+C, vim, ssh and resizing.</li>
+        <li><b>Never lose your work.</b> Every tab keeps its history on disk and restores it after a restart.</li>
+        <li><b>Named tabs.</b> Add, rename, delete and reorder your work as you like.</li>
+        <li><b>Two modes.</b> Close the window and stop everything, or keep programs running in the background (Daemon).</li>
+        <li><b>Automatic start.</b> A Startup command per tab, and Start at login.</li>
+        <li><b>Run as administrator</b> in a separate workspace with its own tabs and logs.</li>
+        <li><b>Life.</b> Traffic lights, a test tube that fills level by level, faces and tab dots.</li>
+        <li><b>Log tools.</b> Search, export to a file, and a notification when a command finishes.</li>
+        <li><b>Engine, themes and faith styles</b> that make the window feel alive, all optional.</li>
+        <li><b>Private.</b> No accounts, no telemetry, no network connections of its own.</li>
+      </ul>
+      <h3>System details</h3><div class="kv" id="aboutKV"></div>
+      <h3>Built with</h3><p class="lead">Electron, xterm.js, Windows ConPTY (@lydell/node-pty), Microsoft Fluent Emoji (MIT) and a lot of care.</p>
+      <button class="btn sm" id="openGH">Source code on GitHub</button> <button class="btn sm" id="openSite">Website</button>
+    </section>
+
+    <section class="pane faq" id="p-faq"><h2>FAQ</h2><p class="lead">Twenty questions about Bryt Shell, and about why PowerShell is stronger than most people think.</p>
+      <details><summary>What is Bryt Shell?</summary><p>Bryt Shell is a tabbed PowerShell terminal for Windows that remembers your work. Every tab has a name, keeps its full history on disk, and can keep running in the background after you close the window. Optional status lights, a test tube and a running-engine display show you what is happening at a glance.</p></details>
+      <details><summary>Why use it instead of the normal PowerShell window?</summary><p>A normal window forgets everything when you close it or restart the PC. Bryt Shell restores your tabs, names and history, shows which tab failed, can start commands for you, and lets long jobs keep running when the window is closed.</p></details>
+      <details><summary>Is my data sent anywhere?</summary><p>No. Bryt Shell makes no network connections of its own and has no accounts or telemetry. Your logs stay on your PC. In Daemon mode the window and the background service talk over a private local pipe that only accepts a random token stored in your profile folder.</p></details>
+      <details><summary>Where are my logs and settings stored?</summary><p>In <code>%APPDATA%\Bryt Shell</code>. Normal tabs live in the <code>user</code> folder and the administrator workspace in <code>admin</code>. Each tab's log is a <code>.log</code> file in its <code>logs</code> folder, and <code>recipes.json</code> sits next to them. Appearance choices are kept inside the app.</p></details>
+      <details><summary>What happens to my tabs when I restart the PC?</summary><p>Windows ends every program at a restart, and no app can prevent that. What you get back is every tab, its name and its full history. Tabs that have a Startup command run it again, and with Start at login (installed app, Daemon mode) they can start by themselves before you even open the window.</p></details>
+      <details><summary>What is the difference between Daemon mode and Closes with window?</summary><p>In <b>Closes with window</b>, programs stop when you close the window and nothing runs in the background. In <b>Daemon</b> mode a small background service owns your terminals, so programs keep running after you close the window and you reattach when you reopen it. Change it any time from the Mode chip at the top (Change mode) or in Settings, General.</p></details>
+      <details><summary>Will Daemon mode slow my PC?</summary><p>The background service is idle and light, and it quits by itself after 5 minutes if no window is open and nothing is running. Programs you leave running use their own CPU, so Bryt Shell asks what to do each time you close the window. The engine and other animations pause when the window is hidden.</p></details>
+      <details><summary>How do I name, rename or delete a tab?</summary><p>Click <b>+</b> and type a name. Double-click a tab to rename it. Click the <b>×</b> on a tab to delete it; its saved log is deleted too, after you confirm.</p></details>
+      <details><summary>How do I run a command automatically when a tab starts?</summary><p>Click <b>Startup command</b>, type the command (for example <code>docker compose up</code>) and press OK. It runs whenever that tab's shell starts, including after a restart. In the installed app with Daemon mode, Settings, General, Start at login runs those tabs silently when you sign in.</p></details>
+      <details><summary>How do I run as administrator?</summary><p>Click <b>Run as admin</b> and accept the Windows permission prompt. Bryt Shell reopens as administrator with its own separate tabs and logs, so elevated sessions never mix with normal ones.</p></details>
+      <details><summary>What do the lights, the test tube and the faces mean?</summary><p>Choose Life in the top bar (or in Settings, Life). Life, Engine and Faith are one-at-a-time experiences, so choosing one turns the others off. The traffic light covers all tabs: red if any tab failed, orange if any is running, green if all finished fine. The test tube shows the active tab: it fills as the command runs, turns green on success and red with a pin where it failed. The faces are a smile when idle, a thinking face while running, happy on success, crying on failure, and neutral when you stopped it yourself with Ctrl+C. A command you stop yourself is never counted as an error.</p></details>
+      <details><summary>How does Bryt Shell know a command failed?</summary><p>At each prompt PowerShell knows whether the last command succeeded. Bryt Shell starts every shell with a small wrapper that prints standard OSC 133 marks when a command starts and finishes, including that success flag, and reads them. Your own prompt (for example oh-my-posh) keeps working.</p></details>
+      <details><summary>How do I teach the test tube my own commands?</summary><p>Settings, Life, <b>Edit level recipes</b> opens <code>recipes.json</code>. A recipe has a <code>match</code> pattern for the command and a list of levels, each with an <code>on</code> pattern that is looked for in the output. A level counts as reached the first time its pattern appears. Unknown commands show a steady tube and turn green or red when they finish.</p></details>
+      <details><summary>Why is PowerShell stronger than most people think? (objects, not text)</summary><p>PowerShell's pipeline passes live .NET objects, not plain text. <code>Get-Process | Where-Object CPU -gt 100 | Sort-Object CPU -Descending | Select-Object -First 5 Name, CPU</code> filters and sorts by real properties, with no text parsing and no fragile column cutting.</p></details>
+      <details><summary>Can PowerShell manage other computers?</summary><p>Yes. <code>Invoke-Command -ComputerName server01 -ScriptBlock { Get-Service }</code> runs commands on another machine (PowerShell remoting), and PowerShell 7 can also remote over SSH with <code>Enter-PSSession -HostName</code>. One script can manage many machines at once.</p></details>
+      <details><summary>Can PowerShell use the whole .NET platform?</summary><p>Yes. Any .NET class is available: <code>[System.IO.Path]::GetTempPath()</code>, <code>[guid]::NewGuid()</code>, <code>[Math]::Round(3.14159, 2)</code>, and <code>Add-Type</code> can even compile C# on the fly. That is why PowerShell can do jobs other shells need extra tools for.</p></details>
+      <details><summary>Can PowerShell work with web APIs and data files?</summary><p>Yes. <code>Invoke-RestMethod https://api.example.com/items</code> returns objects already parsed from JSON, <code>ConvertFrom-Json</code> and <code>ConvertTo-Json</code> convert data, and <code>Import-Csv</code> and <code>Export-Csv</code> read and write CSV files. Pipe the results straight into other commands.</p></details>
+      <details><summary>Can PowerShell run work in parallel or in the background?</summary><p>Yes. <code>Start-Job</code> runs work in the background, and PowerShell 7 adds <code>ForEach-Object -Parallel</code> and <code>Start-ThreadJob</code>, for example <code>1..20 | ForEach-Object -Parallel { $_ * 2 } -ThrottleLimit 5</code>.</p></details>
+      <details><summary>How do I find commands and learn what they do?</summary><p><code>Get-Command *service*</code> finds commands, <code>Get-Help Get-Service -Examples</code> shows examples, and <code>Get-Member</code> shows every property and method of whatever is in the pipeline. Commands follow a Verb-Noun pattern, so they are consistent and guessable. Run <code>Update-Help</code> once to download the full help.</p></details>
+      <details><summary>What else makes PowerShell strong for real projects?</summary><p>Modules and the PowerShell Gallery (<code>Install-Module</code>), safe scripting features (functions with typed, validated parameters, <code>try/catch/finally</code>, and <code>-WhatIf</code> and <code>-Confirm</code> for risky commands), and it runs on Windows, Linux and macOS in PowerShell 7. Bryt Shell uses PowerShell 7 when it is installed and falls back to Windows PowerShell 5.1, and your profile still loads.</p></details>
+    </section>
+  </div>
+</div></div>
+<div class="wrap">
+  <header>
+    <nav class="exp" id="expNav" aria-label="Experience"><span class="thumb"></span>
+      <button data-exp="none" id="xPlain" aria-pressed="false" title="Plain, or click to switch Faith off"><span id="xPlainI"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span id="xPlainT">Plain</span></button>
+      <button data-exp="life" aria-pressed="false" title="Life: lights, test tube and faces"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Life</button>
+      <button data-exp="engine" aria-pressed="false" title="A running engine fills the side columns"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><circle cx="12" cy="12" r="8" stroke-dasharray="3.2 2.5" stroke-width="3.2"/></svg>Engine</button>
+    </nav>
+    <div class="brand"><div class="name">Bryt Shell</div><div class="sub">BrytMa Tech Uganda</div></div>
+    <div class="right">
+      <div class="theme" role="group" aria-label="Theme"><button data-t="light" title="White theme"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>White</span></button><button data-t="dark" title="Black theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span>Black</span></button></div>
+      <div class="menuwrap"><button class="chip" id="mode"><img class="em" id="modeEm" src="assets/emoji/devil.png" alt="" style="margin:0"><span id="modeT">Mode</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="menu" id="modeMenu"><button id="modeChangeMenu">Change mode&hellip;</button><button id="quitall" class="danger" style="display:none">Quit &amp; stop all</button></div></div>
+      <button class="chip" id="adm" title="Run as admin"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><span id="admT">Run as admin</span></button>
+      <button class="chip primary" id="settingsBtn" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></button>
+    </div>
+  </header>
+  <div id="banner"></div>
+  <div id="row">
+    <div id="tabs"></div><div id="addSlot"></div>
+    <div id="tools">
+      <button class="btn sm" id="find" title="Ctrl+F">Search</button>
+      <button class="btn sm" id="notify" title="Get a notification when the running command finishes">Notify when done</button>
+      <div class="menuwrap"><button class="btn sm" id="moreBtn" aria-label="More tools" title="More tools"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>
+        <div class="menu" id="moreMenu"><button id="export">Export log</button><button id="clr">Clear log</button><button id="startup">Startup command</button></div></div>
+    </div>
+  </div>
+  <div class="vstrip" id="verses" aria-label="Verses"><span id="vtxt"></span></div>
+  <div id="stage">
+    <div class="eng" id="engL" aria-hidden="true"></div><div class="eng" id="engR" aria-hidden="true"></div>
+    <aside class="rail" id="railL" aria-label="Status lights">
+<div class="panel lifeonly">
+      <h3>Signal</h3><div class="hint">All tabs at a glance</div>
+      <div class="tl">
+        <div class="hous"><div class="lamp lr" id="lr" title="Errors"></div><div class="lamp lo" id="lo" title="Running"></div><div class="lamp lg" id="lg" title="Success"></div></div>
+        <div class="cnt"><div>Errors<b id="cr">0</b></div><div>Running<b id="co">0</b></div><div>Success<b id="cg">0</b></div></div>
+      </div>
+    </div>
+    <div class="panel lifeonly"><h3>Recent</h3><ul class="ev" id="ev"></ul></div>
+    </aside>
+    <div id="host">
+    <div id="sbar">
+      <input id="sq" placeholder="Find in log">
+      <button class="btn sm" id="sprev" title="Previous (Shift+Enter)">↑</button>
+      <button class="btn sm" id="snext" title="Next (Enter)">↓</button>
+      <button class="btn sm" id="sclose" title="Close (Esc)">×</button>
+    </div>
+    </div>
+    <aside class="rail" id="railR" aria-label="Engine">
+<div class="panel lifeonly">
+      <h3>Engine</h3><div class="hint" id="job">Your command fills the tube, level by level.</div>
+      <div class="tubewrap"><img id="face" src="assets/emoji/face_idle.png" alt="">
+      <svg id="tube" viewBox="0 0 230 372" role="img" aria-label="Engine test tube showing the active tab's progress">
+        <defs>
+          <clipPath id="tc"><path d="M32 12H108V300a38 38 0 0 1-76 0Z"/></clipPath>
+          <linearGradient id="gl" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity=".4"/></linearGradient>
+        </defs>
+        <ellipse cx="70" cy="362" rx="42" ry="6" fill="#000" opacity=".12"/>
+        <g clip-path="url(#tc)"><g id="liq" style="transform:translateY(345px);color:#8aa4c0">
+          <path class="wave" d="M-80 0q20-8 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0V400H-80Z" fill="currentColor"/>
+          <g fill="#fff"><circle class="bub" cx="48" cy="150" r="4" style="animation-delay:0s"/><circle class="bub" cx="80" cy="170" r="3" style="animation-delay:.8s"/><circle class="bub" cx="64" cy="140" r="5" style="animation-delay:1.5s"/><circle class="bub" cx="92" cy="160" r="3" style="animation-delay:.4s"/></g>
+        </g></g>
+        <path d="M32 12H108V300a38 38 0 0 1-76 0Z" fill="url(#gl)" stroke="#7fa6cf" stroke-width="3"/>
+        <path d="M43 24V285" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+        <rect x="26" y="6" width="88" height="9" rx="4.5" fill="url(#gl)" stroke="#7fa6cf" stroke-width="2.5"/>
+        <g id="ticks" font-size="12" fill="currentColor"></g>
+        <g id="pin" style="display:none"><line x1="32" x2="108" stroke="#e5483c" stroke-width="2.5" stroke-dasharray="5 3"/><circle cx="70" r="11" fill="#e5483c"/><text x="70" y="4.5" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">!</text></g>
+      </svg></div>
+      <div class="status" id="est" role="status"></div>
+      <button class="btn sm" id="recipes" style="margin-top:8px" title="Teach the tube the steps of your own commands">Edit level recipes</button>
+    </div>
+    </aside>
+  </div>
+  <footer>Built in Uganda by BrytMa Tech Uganda</footer>
+</div>
+
+<script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+<script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+<script src="node_modules/@xterm/addon-search/lib/addon-search.js"></script>
+<script>
+let tabs=[],cur=null;const terms={};
+const $=id=>document.getElementById(id),host=$('host');
+
+// Electron has no window.prompt(), so this is our own naming box.
+// Returns the text ('' if left empty) or null if cancelled.
+function ask(title,value=''){return new Promise(res=>{
+  const m=$('modal'),i=$('mi');
+  $('mt').textContent=title;i.value=value;m.classList.add('on');i.focus();i.select();
+  const done=v=>{m.classList.remove('on');$('mo').onclick=$('mc').onclick=i.onkeydown=null;res(v);
+    const r=terms[cur];if(r)r.term.focus()};
+  $('mo').onclick=()=>done(i.value.trim());
+  $('mc').onclick=()=>done(null);
+  i.onkeydown=e=>{if(e.key==='Enter')done(i.value.trim());else if(e.key==='Escape')done(null)};
+})}
+
+function render(){
+  const box=$('tabs');box.innerHTML='';
+  tabs.forEach(t=>{
+    const d=document.createElement('div');d.className='tab'+(t.id===cur?' on':'');
+    d.innerHTML='<i class="dot"></i><span></span><b title="Delete tab">×</b>';d.querySelector('span').textContent=t.title;d.dataset.id=t.id;d.querySelector('.dot').className='dot '+dotCls(t.id);
+    d.onclick=()=>select(t.id);
+    d.title='Double-click to rename';
+    d.ondblclick=async()=>{const n=await ask('Rename tab',t.title);if(n){t.title=n;await api.rename(t.id,n);render()}};
+    d.querySelector('b').onclick=async e=>{e.stopPropagation();
+      if(!confirm('Delete "'+t.title+'" and its saved log?'))return;
+      const r=terms[t.id];if(r){r.term.dispose();r.el.remove();delete terms[t.id]}
+      tabs=await api.del(t.id);if(!tabs.find(x=>x.id===cur))cur=tabs[0].id;select(cur)};
+    box.appendChild(d)});
+  const a=document.createElement('button');a.className='btn';a.id='add';a.textContent='+';a.title='New tab';
+  a.onclick=async()=>{const n=await ask('Name this tab','Tab '+(tabs.length+1));if(n===null)return;const t=await api.create();if(n){t.title=n;await api.rename(t.id,n)}tabs.push(t);select(t.id)};$('addSlot').replaceChildren(a);tabsOverflow();
+}
+
+async function open(t){
+  if(terms[t.id])return;
+  const el=document.createElement('div');el.className='term on';host.appendChild(el);
+  const term=new Terminal({fontFamily:'"Cascadia Mono",Consolas,monospace',fontSize:14,cursorBlink:true,scrollback:10000,
+    theme:TERM_THEME()});
+  const fit=new FitAddon.FitAddon();term.loadAddon(fit);term.open(el);fit.fit();
+  const search=new SearchAddon.SearchAddon();term.loadAddon(search);
+  const rec={term,fit,el,search,dead:false,live:false,armed:false,armedAt:0};terms[t.id]=rec;
+  // The shell prints OSC 133;A each time its prompt returns, meaning the last command finished.
+  term.parser.registerOscHandler(133,d=>{
+    if(d==='A'&&rec.live&&rec.armed)doneNotify(t.id);
+    return true});
+  term.attachCustomKeyEventHandler(e=>{
+    if(e.type==='keydown'&&e.ctrlKey&&e.key==='f'){openSearch();return false}
+    if(e.type==='keydown'&&e.ctrlKey&&e.key==='c'&&term.hasSelection()){navigator.clipboard.writeText(term.getSelection());return false}
+    return true});
+  term.onData(d=>{if(rec.dead){rec.dead=false;api.ensure(t.id,term.cols,term.rows);return}api.write(t.id,d)});
+  term.onResize(({cols,rows})=>api.resize(t.id,cols,rows));
+  const log=await api.attach(t.id,term.cols,term.rows);
+  if(log){term.write(log);term.write('\r\n\x1b[2m--- session restored ---\x1b[0m\r\n',()=>{rec.live=true})}
+  else rec.live=true;
+}
+
+async function select(id){
+  cur=id;render();
+  Object.entries(terms).forEach(([k,r])=>r.el.classList.toggle('on',k===id));
+  const t=tabs.find(x=>x.id===id);
+  if(!terms[id])await open(t);
+  const r=terms[id];r.el.classList.add('on');r.fit.fit();r.term.focus();
+  updTools();paintAll();
+}
+
+api.onData((id,d)=>{const r=terms[id];if(r)r.term.write(d)});
+api.onExit(id=>{const r=terms[id];if(r){r.dead=true;r.term.write('\r\n\x1b[33m[shell exited. Press any key to restart]\x1b[0m\r\n')}});
+new ResizeObserver(()=>{const r=terms[cur];if(r)r.fit.fit()}).observe(host);
+
+$('clr').onclick=async()=>{if(!cur)return;await api.clearLog(cur);terms[cur].term.clear()};
+$('startup').onclick=async()=>{const t=tabs.find(x=>x.id===cur);
+  const c=await ask('Command to run when this tab starts (leave empty for none)',t.startup||'');
+  if(c!==null){t.startup=c;await api.startup(cur,t.startup)}};
+$('adm').onclick=async()=>{
+  if(!confirm('Open Bryt Shell as Administrator?\n\nWindows will ask for permission (UAC). If you do not see the prompt, check the taskbar. Admin has its own separate tabs and logs.'))return;
+  const r=await api.admin();
+  if(r&&!r.ok)banner('Could not start as administrator: '+r.error)};
+
+/* ---------- log tools ---------- */
+const sbar=$('sbar'),sq=$('sq');
+function openSearch(){sbar.classList.add('on');sq.focus();sq.select()}
+function closeSearch(){sbar.classList.remove('on');const r=terms[cur];if(r){r.search.clearDecorations&&r.search.clearDecorations();r.term.focus()}}
+const find=(back)=>{const r=terms[cur];if(!r||!sq.value)return;back?r.search.findPrevious(sq.value):r.search.findNext(sq.value)};
+$('find').onclick=openSearch;
+$('sclose').onclick=closeSearch;
+$('snext').onclick=()=>find(false);
+$('sprev').onclick=()=>find(true);
+sq.oninput=()=>find(false);
+sq.onkeydown=e=>{if(e.key==='Enter'){find(e.shiftKey);e.preventDefault()}else if(e.key==='Escape')closeSearch()};
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='f'){e.preventDefault();openSearch()}});
+
+$('export').onclick=async()=>{
+  if(!cur)return;
+  const p=await api.exportLog(cur);
+  if(p)alert('Log saved to:\n'+p)};
+
+function updTools(){
+  const r=terms[cur],b=$('notify');
+  b.classList.toggle('armed',!!(r&&r.armed));
+  b.textContent=r&&r.armed?'Notify: armed (click to cancel)':'Notify when done'}
+$('notify').onclick=()=>{
+  const r=terms[cur];if(!r)return;
+  r.armed=!r.armed;r.armedAt=Date.now();updTools();
+  if(r.armed&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+  r.term.focus()};
+function doneNotify(id){
+  const r=terms[id],t=tabs.find(x=>x.id===id);if(!r||!t)return;
+  r.armed=false;
+  const s=Math.round((Date.now()-r.armedAt)/1000),m=Math.floor(s/60);
+  const took=m?m+'m '+(s%60)+'s':s+'s';
+  try{new Notification('Bryt Shell | '+t.title,{body:'Command finished (armed '+took+' ago)'})}catch{}
+  if(id===cur)updTools()}
+
+let curMode='normal';
+function banner(m){const b=$('banner');b.textContent=m;b.style.display='block'}
+api.onNotice(banner);
+let closeAction=null;
+function showModes(){
+  $('optN').classList.toggle('cur',curMode==='normal');$('tagN').style.display=curMode==='normal'?'':'none';
+  $('optD').classList.toggle('cur',curMode==='daemon');$('tagD').style.display=curMode==='daemon'?'':'none';
+  $('forget').style.display=(curMode==='daemon'&&closeAction)?'':'none';
+  $('mmodal').classList.add('on')}
+$('mode').onclick=showModes;
+$('mmc').onclick=()=>$('mmodal').classList.remove('on');
+$('forget').onclick=async()=>{await api.resetClose();closeAction=null;$('forget').style.display='none'};
+const pick=to=>{
+  if(to===curMode)return;
+  $('mmodal').classList.remove('on');
+  if(confirm('Switch to '+(to==='daemon'?'Daemon (keeps running)':'Closes with window')+' mode?\n\nPrograms running right now will be stopped and the app restarts. Saved logs are kept.'))api.setMode(to)};
+$('optN').onclick=()=>pick('normal');
+$('optD').onclick=()=>pick('daemon');
+$('quitall').onclick=()=>{if(confirm('Stop all background programs and quit Bryt Shell?'))api.quitAll()};
+
+/* ---------- Life: signal lights, Engine tube, tab dots ---------- */
+let st={},lifeOn=false,tickT=null;const seen=new Set(),recent=[];
+try{lifeOn=localStorage.getItem('life')==='1'}catch(e){}
+const YT=l=>345-329*l;                                   // fill level 0..1 -> liquid height in the tube
+const G='#2fcf74',A='#f5a33b',R='#e5483c',GREY='#8aa4c0';
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dotCls=id=>({ok:'g',fail:'r',running:'o',stopped:'x'}[(st[id]||{}).s]||'');
+const tabName=id=>(tabs.find(t=>t.id===id)||{}).title||'tab';
+const fmt=ms=>{const s=Math.round(ms/1000),m=Math.floor(s/60);return m?m+'m '+(s%60)+'s':s+'s'};
+const shortCmd=c=>!c?'':(c.length>34?c.slice(0,33)+'…':c);
+
+function addEvent(id,s){
+  const k=id+':'+s.end;if(seen.has(k))return false;seen.add(k);
+  const word={ok:'finished',fail:'failed',stopped:'was stopped'}[s.s];
+  recent.unshift({c:{ok:G,fail:R,stopped:GREY}[s.s],t:tabName(id)+': '+(shortCmd(s.cmd)||'command')+' '+word,w:new Date(s.end).toLocaleTimeString()+' · '+fmt(s.dur||0)});
+  if(recent.length>5)recent.pop();
+  return true;
+}
+function paintDots(){document.querySelectorAll('.tab[data-id]').forEach(el=>{const d=el.querySelector('.dot');if(d)d.className='dot '+dotCls(el.dataset.id)})}
+function paintSignal(){
+  const v=Object.values(st),f=v.filter(x=>x.s==='fail').length,r=v.filter(x=>x.s==='running').length,o=v.filter(x=>x.s==='ok').length;
+  $('cr').textContent=f;$('co').textContent=r;$('cg').textContent=o;
+  const lamp=f?'lr':r?'lo':o?'lg':'';                    // red beats orange beats green
+  ['lr','lo','lg'].forEach(k=>$(k).classList.toggle('on',k===lamp));
+}
+function paintRecent(){
+  $('ev').innerHTML=recent.length?recent.map(x=>`<li><i style="background:${x.c}"></i><span>${esc(x.t)}<small>${x.w}</small></span></li>`).join('')
+    :`<li><i style="background:${GREY}"></i><span>Waiting for a command<small>nothing has finished yet</small></span></li>`;
+}
+function ticks(names){
+  const n=names.length;
+  $('ticks').innerHTML=names.map((t,i)=>{const y=YT((i+1)/n);
+    return `<line x1="108" x2="120" y1="${y}" y2="${y}" stroke="currentColor" opacity=".5"/><circle id="nd${i}" cx="128" cy="${y}" r="5" fill="${GREY}"/><text x="138" y="${y+4}">${i+1} ${esc(t)}</text>`}).join('');
+}
+function paintEngine(){
+  const s=st[cur]||{s:'idle'},names=s.names||[],n=names.length;
+  const key=names.join('|');if($('ticks').dataset.k!==key){ticks(names);$('ticks').dataset.k=key}
+  let L=0,col=GREY,run=false,head='Idle',body='Run a command to fill the tube.';
+  const lvl=n?Math.max(.06,(s.lv||0)/n):.35;              // unknown commands: a steady half-full tube
+  if(s.s==='running'){run=true;col=A;L=lvl;head='Running';
+    body=(n?`Level ${Math.max(1,s.lv)} of ${n}: ${esc(names[Math.max(1,s.lv)-1])}`:'No levels known for this command')+` · <span id="el">${fmt(Date.now()-s.t0)}</span>`}
+  else if(s.s==='ok'){col=G;L=1;head='Success';body=`${esc(shortCmd(s.cmd))} · ${fmt(s.dur||0)}`}
+  else if(s.s==='fail'){col=R;L=lvl;head='Failed';body=`${esc(shortCmd(s.cmd))}<br>exit ${s.code} · ${fmt(s.dur||0)}<br><button class="btn sm" id="jump">Find the error</button>`}
+  else if(s.s==='stopped'){L=lvl;head='Stopped by you';body=`${esc(shortCmd(s.cmd))} · ${fmt(s.dur||0)}`}
+  const fk={idle:'idle',running:'run',ok:'ok',fail:'fail',stopped:'stop'}[s.s]||'idle',fc=$('face');
+  if(fc.dataset.k!==fk){fc.dataset.k=fk;fc.src='assets/emoji/face_'+fk+'.png';
+    fc.classList.remove('pop','run');void fc.offsetWidth;fc.classList.add(fk==='run'?'run':'pop')}
+  $('liq').style.transform=`translateY(${YT(L)}px)`;$('liq').style.color=col;
+  $('tube').classList.toggle('run',run);
+  for(let i=0;i<n;i++){                                    // level dots: done green, current amber/red, rest grey
+    let c=GREY;const cur1=Math.max(1,s.lv||0)-1;
+    if(s.s==='ok')c=G;else if(s.s==='running'||s.s==='fail'){if(i<cur1)c=G;else if(i===cur1)c=s.s==='running'?A:R}
+    else if(s.s==='stopped'&&i<cur1)c=G;
+    const e=$('nd'+i);if(e)e.setAttribute('fill',c)}
+  const pin=$('pin');
+  if(s.s==='fail'){pin.setAttribute('transform',`translate(0 ${YT(L)})`);pin.style.display=''}else pin.style.display='none';
+  $('job').textContent=s.rname||(s.cmd?shortCmd(s.cmd):'Your command fills the tube, level by level.');
+  const e=$('est');e.className='status '+({running:'run',ok:'ok',fail:'bad'}[s.s]||'');e.innerHTML=`<b>${head}</b>${body}`;
+  const j=$('jump');if(j)j.onclick=()=>{const r=terms[cur];if(r)r.search.findPrevious('error|fail|exception|traceback',{regex:true,caseSensitive:false})};
+}
+// the once-a-second clock only runs while Life is on, the window is visible and something is running
+function manageTick(){
+  const need=lifeOn&&!document.hidden&&Object.values(st).some(x=>x.s==='running');
+  if(need&&!tickT)tickT=setInterval(()=>{const s=st[cur],el=$('el');if(s&&s.s==='running'&&el)el.textContent=fmt(Date.now()-s.t0)},1000);
+  else if(!need&&tickT){clearInterval(tickT);tickT=null}
+}
+function paintAll(){paintWorld();paintDots();if(lifeOn){paintSignal();paintRecent();paintEngine()}manageTick()}
+function applyLife(on,init){
+  lifeOn=on;
+  document.body.classList.toggle('lifeon',on);applySide();
+  if($('setLife'))$('setLife').checked=on;
+  if(!init){try{localStorage.setItem('life',on?'1':'0')}catch(e){}}
+  paintAll();setTimeout(()=>{const r=terms[cur];if(r)r.fit.fit()},60);
+}
+$('recipes').onclick=()=>api.openRecipes();
+api.onState((id,s)=>{
+  if(s)st[id]=s;else delete st[id];
+  if(s&&s.end&&(s.s==='ok'||s.s==='fail'||s.s==='stopped'))addEvent(id,s);
+  paintAll();
+});
+document.addEventListener('visibilitychange',()=>{document.body.classList.toggle('paused',document.hidden);manageTick()});
+
+/* ---------- Preferences: ONE experience at a time (Plain, Life, Engine or Faith) ---------- */
+const QA=s=>[...document.querySelectorAll(s)];
+let P={theme:'light',lastLight:'light',accent:null,termColor:null,exp:'none',rel:'christian',fs:{christian:1,islam:1},verses:true,mine:{christian:'',islam:''},vmode:'add',engine:false};
+try{
+  const old=JSON.parse(localStorage.getItem('prefs')||'null');
+  if(old){
+    Object.assign(P,old);
+    if(!old.exp){   // coming from 2.6.0, where several things could be on at once: keep the most visible one
+      const f=old.faith&&old.faith!=='none'?old.faith:null;
+      P.exp=old.engine?'engine':(localStorage.getItem('life')==='1'?'life':(f?'faith':'none'));
+      if(f)P.rel=f;
+    }
+  }else{P.theme=localStorage.getItem('theme')||'light';if(localStorage.getItem('life')==='1')P.exp='life'}
+  delete P.faith;
+}catch(e){}
+let theme=P.theme,demoW=null,demoT=[],vKey='';
+const savePrefs=()=>{try{localStorage.setItem('prefs',JSON.stringify(P))}catch(e){}};
+const ACCENTS=[['Gold','#d1a22a'],['Ocean','#1f6fb2'],['Emerald','#0f8a63'],['Rose','#c2416b'],['Violet','#7c4dcc'],['Amber','#e07b1f'],['Slate','#475569']];
+const TERMS=[['Ink','#14161c'],['Midnight','#0b1224'],['Forest','#0b1712'],['Plum','#170f1d'],['Black','#000000']];
+const hex2rgb=h=>{h=h.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');const n=parseInt(h,16);return[(n>>16)&255,(n>>8)&255,n&255]};
+const lum=h=>{const[r,g,b]=hex2rgb(h).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b};
+const shade=(h,f)=>'#'+hex2rgb(h).map(v=>Math.max(0,Math.min(255,Math.round(f<0?v*(1+f):v+(255-v)*f)))).map(v=>v.toString(16).padStart(2,'0')).join('');
+const onColor=h=>{const L=lum(h);return (L+.05)/.0556>1.05/(L+.05)?'#14110a':'#fff'};   // whichever text is easier to read on that color
+const TERM_THEME=()=>{
+  const bg=P.termColor||(theme==='dark'?'#070706':'#14161c'),light=lum(bg)>.4,fg=light?'#1b1f24':'#e6edf3',t={background:bg,foreground:fg,cursor:fg};
+  if(light)Object.assign(t,{black:'#1b1f24',red:'#c0392b',green:'#1e8449',yellow:'#8a6d0b',blue:'#1f618d',magenta:'#8e44ad',cyan:'#117a8b',white:'#4d5656',brightBlack:'#5d6d7e',brightRed:'#e74c3c',brightGreen:'#27ae60',brightYellow:'#b7950b',brightBlue:'#2e86c1',brightMagenta:'#a569bd',brightCyan:'#1ab0c4',brightWhite:'#2c3e50'});
+  return t;
+};
+function applyTheme(){
+  theme=P.theme;document.documentElement.dataset.theme=theme;
+  QA('header [data-t]').forEach(b=>{const act=(b.dataset.t==='dark')===(theme==='dark');b.classList.toggle('on',act);b.setAttribute('aria-pressed',act)});
+  QA('#themeCards .card').forEach(c=>c.classList.toggle('on',c.dataset.th===theme));
+  applyColors();
+}
+/* accent and terminal colors (Appearance > Colors). Faith styles keep their own palette while Faith is on. */
+function applyColors(){
+  const st=document.documentElement.style,use=P.exp!=='faith'&&P.accent;
+  if(use){const on=onColor(P.accent);st.setProperty('--gold',P.accent);st.setProperty('--blue',P.accent);st.setProperty('--onaccent',on);st.setProperty('--onblue',on);st.setProperty('--goldtext',theme==='dark'?P.accent:shade(P.accent,-.4))}
+  else['--gold','--blue','--onaccent','--onblue','--goldtext'].forEach(k=>st.removeProperty(k));
+  if(P.termColor)st.setProperty('--term',P.termColor);else st.removeProperty('--term');
+  Object.values(terms).forEach(r=>{r.term.options.theme=TERM_THEME()});
+  if(P.exp==='faith')applyCorners();
+  syncColorUI();
+}
+function buildSwatches(id,list,key){
+  const box=$(id);
+  box.innerHTML=list.map(x=>'<button class="sw1" data-c="'+x[1]+'" title="'+x[0]+'" aria-label="'+x[0]+'" style="background:'+x[1]+'"></button>').join('')+'<label class="sw1 custom" title="Pick any color"><input type="color" aria-label="Custom color"></label>';
+  QA('#'+id+' button').forEach(b=>b.onclick=()=>{P[key]=b.dataset.c;savePrefs();applyColors()});
+  box.querySelector('input').oninput=e=>{P[key]=e.target.value;savePrefs();applyColors()};
+}
+function syncColorUI(){
+  [['accentSw','accent','#d1a22a'],['termSw','termColor','#14161c']].forEach(a=>{
+    const box=$(a[0]);if(!box)return;const cur=(P[a[1]]||a[2]).toLowerCase(),btns=QA('#'+a[0]+' button');
+    btns.forEach(b=>b.classList.toggle('on',b.dataset.c.toLowerCase()===cur));
+    const inp=box.querySelector('input');if(inp)inp.value=cur;
+    box.querySelector('.custom').classList.toggle('on',!btns.some(b=>b.dataset.c.toLowerCase()===cur));
+  });
+}
+function bindAppearance(){
+  QA('#themeCards .card').forEach(c=>c.onclick=()=>{P.theme=c.dataset.th;if(P.theme!=='dark')P.lastLight=P.theme;savePrefs();applyTheme()});
+  buildSwatches('accentSw',ACCENTS,'accent');buildSwatches('termSw',TERMS,'termColor');
+  $('colorsReset').onclick=()=>{P.accent=null;P.termColor=null;savePrefs();applyColors()};
+}
+function tabsOverflow(){   // the tab strip only fades (and scrolls to the open tab) when it really overflows
+  const t=$('tabs');if(!t)return;
+  t.classList.toggle('ovf',t.scrollWidth>t.clientWidth+2);
+  const on=t.querySelector('.tab.on');if(on&&on.scrollIntoView&&t.classList.contains('ovf'))on.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+addEventListener('resize',tabsOverflow);
+const FAITH={christian:{names:['Classic','Stained glass','Parchment & gold'],pre:'c'},islam:{names:['Emerald & gold','Midnight & gold','Sand & teal'],pre:'i'}};
+const VERSES={
+ idle:[["The LORD is my shepherd; I shall not want.","Psalm 23:1"],["Trust in the LORD with all thine heart; and lean not unto thine own understanding.","Proverbs 3:5"],["Commit thy works unto the LORD, and thy thoughts shall be established.","Proverbs 16:3"],["In the beginning God created the heaven and the earth.","Genesis 1:1"],["The LORD is my light and my salvation; whom shall I fear?","Psalm 27:1"]],
+ run:[["Be strong and of a good courage; be not afraid, neither be thou dismayed.","Joshua 1:9"],["I can do all things through Christ which strengtheneth me.","Philippians 4:13"],["They that wait upon the LORD shall renew their strength.","Isaiah 40:31"],["Let us not be weary in well doing: for in due season we shall reap, if we faint not.","Galatians 6:9"],["Whatsoever thy hand findeth to do, do it with thy might.","Ecclesiastes 9:10"]],
+ ok:[["O give thanks unto the LORD; for he is good: for his mercy endureth for ever.","Psalm 107:1"],["Well done, thou good and faithful servant.","Matthew 25:21"],["Now unto him that is able to do exceeding abundantly above all that we ask or think.","Ephesians 3:20"],["This is the day which the LORD hath made; we will rejoice and be glad in it.","Psalm 118:24"]],
+ fail:[["God is our refuge and strength, a very present help in trouble.","Psalm 46:1"],["Weeping may endure for a night, but joy cometh in the morning.","Psalm 30:5"],["For a just man falleth seven times, and riseth up again.","Proverbs 24:16"],["The LORD is nigh unto them that are of a broken heart.","Psalm 34:18"]]
+};
+const ISLAM={
+ idle:[["بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ","الفاتحة: ١","In the name of God, the Most Gracious, the Most Merciful."],["ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ","الفاتحة: ٢","All praise is for God, Lord of all the worlds."],["وَقُل رَّبِّ زِدْنِى عِلْمًا","طه: ١١٤","And say: My Lord, increase me in knowledge."],["فَٱذْكُرُونِىٓ أَذْكُرْكُمْ","البقرة: ١٥٢","So remember Me; I will remember you."]],
+ run:[["إِنَّ ٱللَّهَ مَعَ ٱلصَّـٰبِرِينَ","البقرة: ١٥٣","Indeed, God is with the patient."],["وَمَن يَتَوَكَّلْ عَلَى ٱللَّهِ فَهُوَ حَسْبُهُۥٓ","الطلاق: ٣","Whoever relies on God, He is sufficient for him."],["لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا","البقرة: ٢٨٦","God does not burden a soul beyond its capacity."],["حَسْبُنَا ٱللَّهُ وَنِعْمَ ٱلْوَكِيلُ","آل عمران: ١٧٣","God is enough for us, and He is the best disposer of affairs."]],
+ ok:[["ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ","الفاتحة: ٢","All praise is for God, Lord of all the worlds."],["لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ","إبراهيم: ٧","If you are grateful, I will surely increase you."],["أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ","الرعد: ٢٨","Surely in the remembrance of God do hearts find rest."]],
+ fail:[["فَإِنَّ مَعَ ٱلْعُسْرِ يُسْرًا","الشرح: ٥","For indeed, with hardship comes ease."],["إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا","الشرح: ٦","Indeed, with hardship comes ease."],["وَعَسَىٰٓ أَن تَكْرَهُوا۟ شَيْـًٔا وَهُوَ خَيْرٌ لَّكُمْ","البقرة: ٢١٦","Perhaps you dislike a thing and it is good for you."],["أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ","الرعد: ٢٨","Surely in the remembrance of God do hearts find rest."]]
+};
+
+function cornerSvg(kind,col,rot){
+  const s={
+   c1:'<path d="M2 28V10Q2 2 10 2H28"/><path d="M8 8h7M11.5 4.5v7"/>',
+   c2:'<path d="M2 2H20L2 20Z" fill="#7c3aed" stroke="none" opacity=".9"/><path d="M2 2H11L2 11Z" fill="#2563eb" stroke="none"/>',
+   c3:'<path d="M2 28C2 14 14 2 28 2"/><circle cx="8" cy="8" r="2.2" fill="'+col+'" stroke="none"/>',
+   i1:'<rect x="3" y="3" width="11" height="11"/><rect x="3" y="3" width="11" height="11" transform="rotate(45 8.5 8.5)"/><path d="M2 28V17M28 2H17"/>',
+   i2:'<path d="M2 28A26 26 0 0 1 28 2"/><path d="M2 20A18 18 0 0 1 20 2"/><circle cx="7" cy="7" r="1.9" fill="'+col+'" stroke="none"/>',
+   i3:'<path d="M2 28V2H28"/><path d="M8 22V8H22"/><path d="M14 16V14H16"/>'}[kind];
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><g transform="rotate('+rot+' 15 15)" fill="none" stroke="'+col+'" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+s+'</g></svg>';
+}
+function applyCorners(){
+  const h=document.documentElement,fp=h.dataset.fp;if(!fp)return;
+  const col=(getComputedStyle(h).getPropertyValue('--gold')||'#b8902f').trim();
+  [0,90,180,270].forEach((r,i)=>h.style.setProperty('--k'+(i+1),'url("data:image/svg+xml,'+encodeURIComponent(cornerSvg(fp,col,r))+'")'));
+  const star='<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34"><g fill="none" stroke="'+col+'" stroke-opacity=".28" stroke-width="1"><rect x="9" y="9" width="16" height="16"/><rect x="9" y="9" width="16" height="16" transform="rotate(45 17 17)"/></g></svg>';
+  h.style.setProperty('--pat','url("data:image/svg+xml,'+encodeURIComponent(star)+'")');
+}
+
+/* ---------- Faith (lives in Settings) ---------- */
+function mineList(){return (P.mine[P.rel]||'').split(/\n+/).map(s=>s.trim()).filter(Boolean).map(s=>{const m=s.match(/^(.*\S)\s+[\u2014\u2013-]\s+(\S.*)$/);return m?[m[1],m[2]]:[s,'']})}
+function vcount(){const n=mineList().length;$('vcount').textContent=n?n+(n===1?' verse':' verses')+' saved':'No verses saved yet'}
+function applyFaith(){
+  const on=P.exp==='faith',h=document.documentElement;
+  if(on){h.dataset.fp=FAITH[P.rel].pre+P.fs[P.rel];applyCorners()}else h.removeAttribute('data-fp');
+  document.body.classList.toggle('sc-verses',on&&!!P.verses);
+  vKey='';paintVerses();syncFaithUI();
+  setTimeout(()=>{const r=terms[cur];if(r)r.fit.fit()},60);
+}
+function syncFaithUI(){
+  QA('#faithCards .card').forEach(c=>c.classList.toggle('on',c.dataset.f===P.rel));
+  const F=FAITH[P.rel];
+  $('styleCards').innerHTML=F.names.map((n,i)=>'<button class="card'+(P.fs[P.rel]===i+1?' on':'')+'" data-s="'+(i+1)+'"><div class="fsw" data-fp="'+F.pre+(i+1)+'"><i>'+(P.rel==='islam'?'\u0628\u0650\u0633\u0652\u0645\u0650':'Aa')+'</i></div><b>'+n+'</b></button>').join('');
+  QA('#styleCards .card').forEach(c=>c.onclick=()=>{P.fs[P.rel]=+c.dataset.s;savePrefs();applyFaith()});
+  $('setVerses').checked=!!P.verses;
+  $('versesNote').textContent=P.rel==='islam'?'Short Arabic verses scroll above the terminal and change with what your command is doing.':'King James Bible verses scroll above the terminal and change with what your command is doing.';
+  if(document.activeElement!==$('mine'))$('mine').value=P.mine[P.rel]||'';
+  QA('#vmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===P.vmode));vcount();
+}
+/* ---------- the shared "world" from the active tab: idle | run | ok | fail | stop ---------- */
+const worldOf=()=>demoW||({running:'run',ok:'ok',fail:'fail',stopped:'stop'}[(st[cur]||{}).s]||'idle');
+function paintWorld(){const w=worldOf();if(document.body.dataset.world!==w){document.body.dataset.world=w;paintVerses();engineWorld(w)}}
+function paintVerses(){
+  if(P.exp!=='faith'||!P.verses)return;
+  const w=document.body.dataset.world||'idle',key=w==='stop'?'idle':w,mine=mineList(),isl=P.rel==='islam';
+  const base=isl?ISLAM[key].map(v=>({t:v[0],r:'['+v[1]+']',b:1,m:v[2]})):VERSES[key].slice().reverse().map(v=>({t:'\u201C'+v[0]+'\u201D',r:'\u2014 '+v[1]}));
+  const mi=mine.map(v=>({t:v[0],r:v[1]?'\u2014 '+v[1]:''}));
+  const items=P.vmode==='only'&&mi.length?mi:mi.concat(base),sig=JSON.stringify([P.rel,key,P.vmode,mine]);
+  if(sig===vKey)return;vKey=sig;
+  const box=$('verses'),el=$('vtxt');
+  const t=items.map(x=>(x.b?'\uFD3F '+x.t+' \uFD3E ':x.t+' ')+x.r).join(isl?'     \u06DE     ':'      \u271D      ');
+  box.title=isl?base.filter(x=>x.m).map(x=>x.m).join('   |   '):'';el.dir=isl?'rtl':'ltr';
+  el.textContent=t;el.style.setProperty('--vw',box.clientWidth+'px');
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';el.style.animationDuration=Math.max(40,t.length*(isl?.28:.2))+'s';
+}
+/* ---------- side columns, and the ONE active experience ---------- */
+function applySide(){
+  const on=!!(lifeOn||P.engine);
+  $('stage').classList.toggle('side',on);document.querySelector('.wrap').classList.toggle('side',on);
+  setTimeout(()=>{const r=terms[cur];if(r)r.fit.fit()},60);
+}
+const IC_PLAIN='<circle cx="12" cy="12" r="8"/>',IC_BOOK='<path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/>';
+function setExp(k,init){
+  P.exp=k;P.engine=(k==='engine');if(!init)savePrefs();
+  document.body.classList.toggle('sc-engine',k==='engine');
+  applyLife(k==='life',true);applyFaith();applyColors();
+  if(k==='engine'){ensureEngine();engineWorld(worldOf())}
+  else if(ENG.built){ENG.tgt=0;['engL','engR'].forEach(id=>$(id).classList.remove('crash'))}
+  syncExpUI();
+}
+function syncExpUI(){
+  QA('#expNav button[data-exp]').forEach(b=>{const k=b.dataset.exp,act=P.exp===k||(k==='none'&&(P.exp==='none'||P.exp==='faith'));b.classList.toggle('on',act);b.setAttribute('aria-pressed',act)});
+  $('xPlainT').textContent=P.exp==='faith'?'Faith':'Plain';
+  $('xPlainI').innerHTML='<svg viewBox="0 0 24 24">'+(P.exp==='faith'?IC_BOOK:IC_PLAIN)+'</svg>';
+  const nav=$('expNav'),on=nav.querySelector('button.on');if(on&&on.offsetWidth){nav.style.setProperty('--x',on.offsetLeft+'px');nav.style.setProperty('--w',on.offsetWidth+'px')}
+  $('setLife').checked=P.exp==='life';$('setEngine').checked=P.exp==='engine';$('setFaithOn').checked=P.exp==='faith';
+  $('faithBox').style.display=P.exp==='faith'?'':'none';
+}
+function demo(k){
+  demoT.forEach(clearTimeout);demoT=[];
+  if(P.exp!=='engine')setExp('engine');
+  demoW='run';paintWorld();
+  if(k==='ok')demoT.push(setTimeout(()=>{demoW='ok';paintWorld()},6000),setTimeout(()=>{demoW=null;paintWorld()},8500));
+  else demoT.push(setTimeout(()=>{demoW='fail';paintWorld()},3500),setTimeout(()=>{demoW=null;paintWorld()},9500));
+}
+
+/* ============ ENGINE: a running engine in both side columns ============ */
+const NS='http://www.w3.org/2000/svg',TAU=Math.PI*2,mod=(a,m)=>((a%m)+m)%m,deg=r=>(r*180/Math.PI).toFixed(2),f1=x=>x.toFixed(1);
+const ENG={built:false,w:0,tgt:0,th:.5,raf:0,last:0,upd:[]};
+const SE=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+function gearD(n,ro,ri){const st=TAU/n;let d='';for(let i=0;i<n;i++){const a=i*st,t=st*.2,u=st*.34;[[ri,a-u],[ro,a-t],[ro,a+t],[ri,a+u]].forEach((p,j)=>{d+=(i===0&&j===0?'M':'L')+f1(p[0]*Math.cos(p[1]))+' '+f1(p[0]*Math.sin(p[1]))})}return d+'Z'}
+/* gear spec: a child gear is placed on the pitch circle of its parent and its phase is set so teeth mesh at every angle */
+function gspec(n,R,o){
+  const g={n,R,st:TAU/n};
+  if(o.parent){const p=o.parent;g.cx=p.cx+(p.R+R)*Math.cos(o.alpha);g.cy=p.cy+(p.R+R)*Math.sin(o.alpha);g.k=-p.k*p.n/n;g.base=mod(o.alpha+Math.PI-g.st/2+g.st*((o.alpha-p.base)/p.st),g.st)}
+  else{g.cx=o.cx;g.cy=o.cy;g.k=o.k===undefined?1:o.k;g.base=o.base||0}
+  return g;
+}
+function defs(){
+  if(document.getElementById('engdefs'))return;
+  const s=SE('svg',{id:'engdefs',width:0,height:0,style:'position:absolute'},document.body),d=SE('defs',{},s);
+  const rg=SE('radialGradient',{id:'hl',cx:'.3',cy:'.26',r:'.9'},d);
+  [['0','#fff',.6],['.4','#fff',.04],['1','#000',.34]].forEach(a=>SE('stop',{offset:a[0],'stop-color':a[1],'stop-opacity':a[2]},rg));
+  const lg=(id,x2,y2,st)=>{const g=SE('linearGradient',{id,x1:0,y1:0,x2,y2},d);st.forEach(a=>SE('stop',{offset:a[0],style:'stop-color:var('+a[1]+')'},g))};
+  lg('cyl',1,0,[['0','--m3'],['.3','--m1'],['.65','--m2'],['1','--m3']]);
+  lg('bronze',1,1,[['0','--bz1'],['1','--bz2']]);
+  lg('shaft',0,1,[['0','--m3'],['.45','--m1'],['1','--m3']]);
+}
+function bolt(svg,x,y,r){SE('circle',{cx:x,cy:y,r,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1},svg);const p=[0,1,2,3,4,5].map(i=>f1(x+r*.58*Math.cos(i*TAU/6))+','+f1(y+r*.58*Math.sin(i*TAU/6))).join(' ');SE('polygon',{points:p,fill:'var(--m3)',stroke:'var(--edge)','stroke-width':.7},svg);SE('circle',{cx:x-r*.25,cy:y-r*.3,r:r*.3,fill:'#fff','fill-opacity':.35},svg)}
+function plate(svg,w,h){[[12,12],[w-12,12],[12,h-12],[w-12,h-12]].forEach(p=>bolt(svg,p[0],p[1],6.5))}
+function drawGear(svg,g,o){
+  o=o||{};const m=2*g.R/g.n,ro=g.R+m*.95,ri=g.R-m*1.15;g.ro=ro;g.ri=ri;
+  SE('circle',{cx:g.cx+3,cy:g.cy+4,r:ro,fill:'#000','fill-opacity':.22},svg);
+  const w=SE('g',{transform:'translate('+f1(g.cx)+' '+f1(g.cy)+')'},svg),r=SE('g',{},w);
+  SE('path',{d:gearD(g.n,ro,ri),fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1.1,'stroke-linejoin':'round'},r);
+  SE('circle',{r:f1(ri*.86),fill:'none',stroke:'var(--m3)','stroke-width':Math.max(1.2,g.R*.04)},r);
+  SE('circle',{r:f1(ri*.7),fill:'var(--m1)','fill-opacity':.5,stroke:'var(--edge)','stroke-width':.8},r);
+  const nh=o.holes===false?0:(g.R>=30?(g.R>=55?8:6):0);
+  for(let i=0;i<nh;i++){const a=i*TAU/nh;SE('circle',{cx:f1(ri*.5*Math.cos(a)),cy:f1(ri*.5*Math.sin(a)),r:f1(ri*(g.R>=55?.15:.17)),fill:'var(--bore)',stroke:'var(--edge)','stroke-width':.8},r)}
+  if(o.extra)o.extra(r,ri);
+  const hub=Math.max(3.5,ri*.2);
+  SE('circle',{r:f1(hub),fill:'var(--m1)',stroke:'var(--edge)','stroke-width':1},r);
+  SE('rect',{x:-1.4,y:f1(-hub-1.5),width:2.8,height:4,fill:'var(--edge)'},r);
+  SE('circle',{cx:g.cx,cy:g.cy,r:f1(ro),fill:'url(#hl)'},svg);
+  g.up=th=>r.setAttribute('transform','rotate('+deg(g.base+g.k*th)+')');ENG.upd.push(g.up);return g;
+}
+function pulley(svg,cx,cy,R,k){
+  const g={cx,cy,R,k};
+  SE('circle',{cx:cx+3,cy:cy+4,r:R,fill:'#000','fill-opacity':.22},svg);
+  const w=SE('g',{transform:'translate('+cx+' '+cy+')'},svg),r=SE('g',{},w);
+  SE('circle',{r:R,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1.2},r);
+  [.86,.7,.55].forEach((f,i)=>SE('circle',{r:f1(R*f),fill:i===2?'var(--m1)':'none','fill-opacity':.6,stroke:'var(--edge)','stroke-width':.9,'stroke-opacity':.8},r));
+  if(R>20)for(let i=0;i<5;i++){const a=i*TAU/5;SE('circle',{cx:f1(R*.36*Math.cos(a)),cy:f1(R*.36*Math.sin(a)),r:f1(R*.09),fill:'var(--bore)'},r)}
+  SE('circle',{r:f1(Math.max(3,R*.14)),fill:'var(--m3)',stroke:'var(--edge)'},r);
+  SE('rect',{x:-1.3,y:f1(-R*.46),width:2.6,height:f1(R*.14),fill:'var(--edge)'},r);
+  SE('circle',{cx,cy,r:R,fill:'url(#hl)'},svg);
+  g.up=th=>r.setAttribute('transform','rotate('+deg(k*th)+')');ENG.upd.push(g.up);return g;
+}
+function beltPath(c){
+  const n=c.length,out=[];let d='';
+  for(let i=0;i<n;i++){const A=c[i],B=c[(i+1)%n],dx=B.cx-A.cx,dy=B.cy-A.cy,dist=Math.hypot(dx,dy);out[i]=Math.atan2(dy,dx)-Math.acos((A.R-B.R)/dist)}
+  for(let i=0;i<n;i++){const A=c[i],B=c[(i+1)%n],t0=out[i],t1=out[(i+1)%n];
+    if(i===0)d+='M'+f1(A.cx+A.R*Math.cos(t0))+' '+f1(A.cy+A.R*Math.sin(t0));
+    d+=' L'+f1(B.cx+B.R*Math.cos(t0))+' '+f1(B.cy+B.R*Math.sin(t0));
+    const arc=mod(t1-t0,TAU);
+    d+=' A'+f1(B.R)+' '+f1(B.R)+' 0 '+(arc>Math.PI?1:0)+' 1 '+f1(B.cx+B.R*Math.cos(t1))+' '+f1(B.cy+B.R*Math.sin(t1));
+  }
+  return d+'Z';
+}
+function vTwin(svg,cx,cy){
+  const r=22,l=76,B=[-.52,.52];
+  B.forEach(b=>{
+    const g=SE('g',{transform:'translate('+cx+' '+cy+') rotate('+deg(b)+')'},svg);
+    SE('rect',{x:-21,y:-134,width:42,height:96,rx:4,fill:'url(#cyl)',stroke:'var(--edge)','stroke-width':1.2},g);
+    for(let i=0;i<5;i++)SE('rect',{x:-26,y:-124+i*15,width:52,height:5,rx:2,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':.8},g);
+    SE('rect',{x:-15,y:-130,width:30,height:88,fill:'var(--bore)'},g);
+    SE('rect',{x:-24,y:-142,width:48,height:13,rx:3,fill:'var(--m1)',stroke:'var(--edge)','stroke-width':1.2},g);
+    SE('circle',{cx:0,cy:-148,r:4,fill:'var(--m3)',stroke:'var(--edge)'},g);
+  });
+  SE('circle',{cx,cy,r:46,fill:'var(--m3)','fill-opacity':.55,stroke:'var(--edge)','stroke-width':1.2},svg);
+  const pist=B.map(()=>{const g=SE('g',{},svg);
+    SE('rect',{x:-15,y:-27,width:30,height:33,rx:3,fill:'url(#bronze)',stroke:'var(--edge)','stroke-width':1},g);
+    [-21,-15,-9].forEach(y=>SE('line',{x1:-15,x2:15,y1:y,y2:y,stroke:'var(--edge)','stroke-width':1.2,opacity:.75},g));
+    SE('circle',{cx:0,cy:0,r:4,fill:'var(--m1)',stroke:'var(--edge)'},g);return g});
+  const rodO=B.map(()=>SE('path',{fill:'none',stroke:'var(--edge)','stroke-width':9.5,'stroke-linecap':'round'},svg));
+  const rodI=B.map(()=>SE('path',{fill:'none',stroke:'var(--m1)','stroke-width':6.5,'stroke-linecap':'round'},svg));
+  const cw=SE('g',{transform:'translate('+cx+' '+cy+')'},svg),crank=SE('g',{},cw);
+  SE('path',{d:'M0 0L-18 31.2A36 36 0 0 1 -18 -31.2Z',fill:'url(#bronze)',stroke:'var(--edge)','stroke-width':1.2,'stroke-linejoin':'round'},crank);
+  SE('path',{d:'M0 -10L'+r+' -6.5A6.5 6.5 0 0 1 '+r+' 6.5L0 10Z',fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1.1},crank);
+  SE('circle',{cx:0,cy:0,r:11,fill:'var(--m1)',stroke:'var(--edge)','stroke-width':1.2},crank);
+  SE('circle',{cx:r,cy:0,r:7.5,fill:'var(--m1)',stroke:'var(--edge)','stroke-width':1.2},crank);
+  SE('circle',{cx:cx,cy:cy,r:46,fill:'url(#hl)','fill-opacity':.55},svg);
+  ENG.upd.push(th=>{
+    const px=cx+r*Math.cos(th),py=cy+r*Math.sin(th);
+    B.forEach((b,i)=>{const ux=Math.sin(b),uy=-Math.cos(b),dx=px-cx,dy=py-cy,s=dx*ux+dy*uy+Math.sqrt(l*l-Math.pow(dx*uy-dy*ux,2));
+      pist[i].setAttribute('transform','translate('+cx+' '+cy+') rotate('+deg(b)+') translate(0 '+f1(-s)+')');
+      const d='M'+f1(px)+' '+f1(py)+'L'+f1(cx+ux*s)+' '+f1(cy+uy*s);rodO[i].setAttribute('d',d);rodI[i].setAttribute('d',d)});
+    crank.setAttribute('transform','rotate('+deg(th)+')');
+  });
+}
+function cams(svg,y,xs,ph){
+  SE('rect',{x:46,y:y-6,width:210,height:12,fill:'url(#shaft)',stroke:'var(--edge)','stroke-width':1},svg);
+  [76,150,228].forEach(x=>{SE('rect',{x:x-9,y:y-16,width:18,height:10,rx:2,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1},svg)});
+  const rho=a=>{const w=mod(a+Math.PI,TAU)-Math.PI;return 14+11*Math.exp(-Math.pow(w/.62,2))};
+  const lobes=xs.map((x,i)=>{
+    const pts=[];for(let k=0;k<72;k++){const a=k/72*TAU,p=rho(a);pts.push(f1(p*Math.cos(a))+','+f1(p*Math.sin(a)))}
+    const w=SE('g',{transform:'translate('+x+' '+y+')'},svg),r=SE('g',{},w);
+    SE('polygon',{points:pts.join(' '),fill:'url(#bronze)',stroke:'var(--edge)','stroke-width':1.1,'stroke-linejoin':'round'},r);
+    SE('circle',{r:4.5,fill:'var(--m1)',stroke:'var(--edge)'},r);
+    // valve train under this lobe
+    SE('rect',{x:x-12,y:y+54,width:24,height:16,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1},svg);
+    SE('rect',{x:x-26,y:y+84,width:14,height:26,fill:'var(--m3)',stroke:'var(--edge)','stroke-width':1},svg);
+    SE('rect',{x:x+12,y:y+84,width:14,height:26,fill:'var(--m3)',stroke:'var(--edge)','stroke-width':1},svg);
+    SE('rect',{x:x-12,y:y+84,width:24,height:26,fill:'var(--bore)'},svg);
+    const spring=SE('path',{fill:'none',stroke:'var(--m3)','stroke-width':2.4,'stroke-linejoin':'round'},svg);
+    const moving=SE('g',{},svg);
+    SE('rect',{x:x-2.2,y:y+30,width:4.4,height:54,fill:'var(--m1)',stroke:'var(--edge)','stroke-width':.8},moving);
+    SE('path',{d:'M'+(x-13)+' '+(y+84)+'H'+(x+13)+'L'+(x+8)+' '+(y+79)+'H'+(x-8)+'Z',fill:'url(#bronze)',stroke:'var(--edge)','stroke-width':1},moving);
+    SE('rect',{x:x-9,y:y+14,width:18,height:16,rx:2,fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1},moving);
+    return {r,spring,moving,x,ph:ph[i]};
+  });
+  ENG.upd.push(th=>{const psi=.5*th;lobes.forEach(L=>{
+    const a=psi+L.ph;L.r.setAttribute('transform','rotate('+deg(a)+')');
+    const lift=rho(Math.PI/2-a)-14;L.moving.setAttribute('transform','translate(0 '+f1(lift)+')');
+    const top=y+30+lift,bot=y+54,n=6;let d='M'+L.x+' '+f1(top);
+    for(let i=1;i<=n;i++)d+='L'+(L.x+(i%2?9:-9))+' '+f1(top+(bot-top)*i/(n+1));
+    L.spring.setAttribute('d',d+'L'+L.x+' '+bot);
+  })});
+}
+function buildLeft(svg){
+  plate(svg,210,560);
+  const a=Math.PI/180,g1=gspec(40,64,{cx:-6,cy:76,k:.5,base:.1}),g2=gspec(22,35.2,{parent:g1,alpha:10*a}),g3=gspec(30,48,{parent:g2,alpha:60*a}),g4=gspec(18,28.8,{parent:g3,alpha:130*a}),g5=gspec(34,54.4,{parent:g4,alpha:80*a});
+  [g1,g2,g3,g4,g5].forEach(g=>drawGear(svg,g));
+  vTwin(svg,105,512);
+  SE('path',{d:'M0 546Q105 532 210 546V560H0Z',fill:'var(--m3)',stroke:'var(--edge)','stroke-width':1.2},svg);
+}
+function buildRight(svg){
+  plate(svg,260,560);
+  const a=Math.PI/180,fw=gspec(36,99,{cx:178,cy:112,k:1,base:.2}),pin=gspec(16,44,{parent:fw,alpha:165*a});
+  const ring=(r,ri)=>{SE('circle',{r:f1(ri*.78),fill:'none',stroke:'var(--m3)','stroke-width':9,'stroke-opacity':.55},r);for(let i=0;i<10;i++){const q=i*TAU/10;SE('circle',{cx:f1(ri*.5*Math.cos(q)),cy:f1(ri*.5*Math.sin(q)),r:5,fill:'var(--m3)',stroke:'var(--edge)'},r);SE('circle',{cx:f1(ri*.5*Math.cos(q)),cy:f1(ri*.5*Math.sin(q)),r:2,fill:'var(--m1)'},r)}SE('circle',{r:f1(ri*.24),fill:'var(--m2)',stroke:'var(--edge)','stroke-width':1.4},r)};
+  drawGear(svg,fw,{holes:false,extra:ring});drawGear(svg,pin);
+  const P1={cx:62,cy:305,R:38},P2={cx:198,cy:266,R:24},P3={cx:170,cy:356,R:16},bd=beltPath([P1,P2,P3]);
+  SE('path',{d:bd,fill:'none',stroke:'var(--edge)','stroke-width':8,'stroke-linejoin':'round'},svg);
+  const ribs=SE('path',{d:bd,fill:'none',stroke:'var(--m3)','stroke-width':5,'stroke-dasharray':'2.5 3.5'},svg);
+  pulley(svg,P1.cx,P1.cy,P1.R,1);pulley(svg,P2.cx,P2.cy,P2.R,P1.R/P2.R);pulley(svg,P3.cx,P3.cy,P3.R,P1.R/P3.R);
+  ENG.upd.push(th=>ribs.setAttribute('stroke-dashoffset',f1(-(P1.R*th)%6)));
+  drawGear(svg,gspec(22,34,{cx:38,cy:448,k:.5,base:0}));
+  cams(svg,448,[104,178],[0,2.4]);
+  SE('path',{d:'M0 548H260V560H0Z',fill:'var(--m3)',stroke:'var(--edge)','stroke-width':1.2},svg);
+}
+function ensureEngine(){
+  if(ENG.built)return;defs();
+  [['engL',210,560,buildLeft],['engR',260,560,buildRight]].forEach(a=>{const svg=SE('svg',{viewBox:'0 0 '+a[1]+' '+a[2],preserveAspectRatio:'xMidYMid slice'},$(a[0]));a[3](svg);ENG[a[0]]=svg});
+  ENG.built=true;ENG.upd.forEach(f=>f(ENG.th));
+}
+function engineLoop(t){
+  ENG.raf=0;if(document.hidden){ENG.last=0;return}
+  if(ENG.last&&t-ENG.last<30){ENG.raf=requestAnimationFrame(engineLoop);return}
+  const dt=ENG.last?Math.min(.1,(t-ENG.last)/1000):.033;ENG.last=t;
+  ENG.w+=(ENG.tgt-ENG.w)*(1-Math.exp(-dt/.35));ENG.th+=ENG.w*dt;
+  for(const f of ENG.upd)f(ENG.th);
+  if(ENG.tgt>0||ENG.w>.02)ENG.raf=requestAnimationFrame(engineLoop);else ENG.last=0;
+}
+function sparks(){
+  ['engL','engR'].forEach(id=>{const svg=ENG[id];if(!svg)return;const vb=svg.viewBox.baseVal;
+    for(let i=0;i<14;i++){const x=Math.random()*vb.width,y=Math.random()*vb.height,a=Math.random()*TAU,l=14+Math.random()*28;
+      const ln=SE('line',{x1:f1(x),y1:f1(y),x2:f1(x+Math.cos(a)*6),y2:f1(y+Math.sin(a)*6),class:'spk',stroke:['#ffd24d','#ff8a1a','#ff4d4d'][i%3],'stroke-width':2.4,style:'--tx:'+f1(Math.cos(a)*l)+'px;--ty:'+f1(Math.sin(a)*l)+'px'},svg);
+      setTimeout(()=>ln.remove(),1000)}});
+}
+function engineWorld(w){
+  if(!P.engine||!ENG.built)return;
+  ENG.tgt=w==='run'?2.0:0;
+  ['engL','engR'].forEach(id=>$(id).classList.toggle('crash',w==='fail'));
+  if(w==='fail'){ENG.w=0;sparks()}
+  if((ENG.tgt>0||ENG.w>.02)&&!ENG.raf)ENG.raf=requestAnimationFrame(engineLoop);
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ENG.built)engineWorld(worldOf())});
+const SUPPORT='muhumuzabright26@gmail.com';
+function copyText(t){try{navigator.clipboard.writeText(t)}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}}
+function flash(b,t){const o=b.textContent;b.textContent=t;setTimeout(()=>b.textContent=o,1500)}
+async function sysText(){const i=await api.sysinfo();return ['Bryt Shell '+i.appVersion,'Mode: '+i.mode,'Administrator: '+(i.admin?'yes':'no'),'Shell: '+i.shell,'Windows: '+i.osRelease+' ('+i.arch+')','Electron '+i.electron+', Chromium '+i.chrome+', Node '+i.node].join('\n')}
+async function fillAbout(){
+  const i=await api.sysinfo();
+  const rows=[['Version',i.appVersion],['Mode',i.mode==='daemon'?'Daemon (keeps running)':'Closes with window'],['Administrator',i.admin?'Yes':'No'],['PowerShell',i.shell],['Windows',i.osRelease+' ('+i.arch+')'],['Electron',i.electron],['Chromium',i.chrome],['Node.js',i.node],['Data folder','%APPDATA%\\Bryt Shell']];
+  $('aboutKV').innerHTML=rows.map(r=>'<div>'+r[0]+'</div><div>'+esc(r[1])+'</div>').join('');
+}
+function showPane(p){
+  document.querySelectorAll('.snav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id==='p-'+p));
+  if(p==='about')fillAbout();
+}
+function openSettings(p){$('settings').classList.add('on');showPane(p||'general')}
+function closeSettings(){$('settings').classList.remove('on');const r=terms[cur];if(r)r.term.focus()}
+
+function wireHeader(){
+  QA('#expNav button[data-exp]').forEach(b=>b.onclick=()=>{const k=b.dataset.exp;setExp(k==='none'||k===P.exp?'none':k)});
+  QA('header [data-t]').forEach(b=>b.onclick=()=>{P.theme=b.dataset.t==='dark'?'dark':(P.lastLight||'light');savePrefs();applyTheme()});   // White = your last light theme
+  const mm=$('modeMenu'),mt=$('moreMenu');
+  $('mode').onclick=e=>{e.stopPropagation();mt.classList.remove('on');mm.classList.toggle('on')};
+  $('moreBtn').onclick=e=>{e.stopPropagation();mm.classList.remove('on');mt.classList.toggle('on')};
+  document.addEventListener('click',()=>{mm.classList.remove('on');mt.classList.remove('on')});
+  $('modeChangeMenu').onclick=()=>{mm.classList.remove('on');showModes()};
+  $('quitall').addEventListener('click',()=>mm.classList.remove('on'));
+  [$('export'),$('clr'),$('startup')].forEach(b=>b.addEventListener('click',()=>mt.classList.remove('on')));
+  addEventListener('resize',syncExpUI);
+}
+wireHeader();
+function bindSettings(){
+  $('settingsBtn').onclick=()=>openSettings();$('sclose').onclick=closeSettings;
+  $('settings').addEventListener('mousedown',e=>{if(e.target===$('settings'))closeSettings()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('settings').classList.contains('on'))closeSettings()});
+  QA('.snav button[data-p]').forEach(b=>b.onclick=()=>showPane(b.dataset.p));
+  $('modeChange').onclick=()=>showModes();
+  $('quitFromSettings').onclick=()=>$('quitall').click();
+  $('forget2').onclick=async()=>{await api.resetClose();closeAction=null;$('forgetRow').style.display='none'};
+  $('setLife').onchange=()=>setExp($('setLife').checked?'life':'none');
+  $('recipes2').onclick=()=>api.openRecipes();
+  $('setEngine').onchange=()=>setExp($('setEngine').checked?'engine':'none');
+  $('prevRun').onclick=()=>{closeSettings();demo('ok')};$('prevCrash').onclick=()=>{closeSettings();demo('bad')};
+  $('setFaithOn').onchange=()=>setExp($('setFaithOn').checked?'faith':'none');
+  QA('#faithCards .card').forEach(c=>c.onclick=()=>{P.rel=c.dataset.f;savePrefs();applyFaith()});
+  $('setVerses').onchange=()=>{P.verses=$('setVerses').checked;savePrefs();applyFaith()};
+  $('mine').oninput=()=>{P.mine[P.rel]=$('mine').value;vcount()};
+  QA('#vmode button').forEach(b=>b.onclick=()=>{P.vmode=b.dataset.m;savePrefs();applyFaith()});
+  $('saveV').onclick=()=>{P.mine[P.rel]=$('mine').value;savePrefs();vKey='';paintVerses();vcount();flash($('saveV'),'Saved \u2713')};
+  $('supEmail').onclick=async()=>{const body='Hello Bryt Shell support,\n\nWhat I did:\n\nWhat I expected:\n\nWhat happened:\n\n---\nSystem details\n'+await sysText();api.openExternal('mailto:'+SUPPORT+'?subject='+encodeURIComponent('Bryt Shell support')+'&body='+encodeURIComponent(body))};
+  $('supCopy').onclick=()=>{copyText(SUPPORT);flash($('supCopy'),'Copied')};
+  $('supInfo').onclick=async()=>{copyText(await sysText());flash($('supInfo'),'Copied')};
+  $('supFaq').onclick=()=>showPane('faq');
+  $('openGH').onclick=()=>api.openExternal('https://github.com/muhumuza684/bryt-shell');
+  $('openSite').onclick=()=>api.openExternal('https://muhumuza684.github.io/bryt-shell/');
+}
+bindSettings();bindAppearance();
+
+(async()=>{
+  const info=await api.info();
+  curMode=info.mode;closeAction=info.closeAction;
+  $('modeT').textContent=curMode==='daemon'?'Daemon':'Closes';
+  $('modeEm').src='assets/emoji/'+(curMode==='daemon'?'devil':'sleep')+'.png';
+  $('mode').title=curMode==='daemon'?'Daemon: programs keep running in the background after you close the window. Click for details.':'Closes with window: programs stop when you close the window. Click for details.';
+  $('modeNow').textContent=curMode==='daemon'?'Daemon: programs keep running in the background after you close the window.':'Closes with window: programs stop when you close the window.';
+  $('forgetRow').style.display=closeAction?'':'none';
+  if(curMode==='daemon'){
+    $('quitall').style.display='';$('quitRow').style.display='';
+    const on=await api.autostart();
+    if(on===null){$('autostart').disabled=true;$('autostartNote').textContent='Start at login works in the installed app, not when running from source.'}
+    else $('autostart').checked=!!on;
+  }else{$('autostart').disabled=true;$('autostartNote').textContent='Start at login works with Daemon mode. Change the mode above first.'}
+  $('autostart').onchange=async()=>{const r=await api.autostart($('autostart').checked);if(r===null)$('autostart').checked=false};
+  if(info.notice)banner(info.notice);
+  if(info.admin){$('admT').textContent='Running as admin';$('adm').disabled=true;$('adm').classList.add('adm-on')}
+  tabs=await api.list();st=(await api.states())||{};
+  Object.keys(st).forEach(id=>{const x=st[id];if(x&&x.end&&x.s!=='running')addEvent(id,x)});
+  applyTheme();setExp(P.exp,true);select(tabs[0].id);setTimeout(syncExpUI,120);
+})();
+</script></body></html>
