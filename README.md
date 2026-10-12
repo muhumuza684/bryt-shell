@@ -23,7 +23,7 @@ Tabbed, named, persistent terminals for Windows, with live status lights, a test
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-0b57a4">
-  <img alt="Version" src="https://img.shields.io/badge/version-2.8.3-0b57a4">
+  <img alt="Version" src="https://img.shields.io/badge/version-2.9.0-0b57a4">
   <img alt="Built with" src="https://img.shields.io/badge/built%20with-Electron%20%2B%20xterm.js-0b57a4">
 </p>
 
@@ -255,6 +255,14 @@ If this folder is not a git repository yet, run `.\setup-github.ps1` once. It ch
 ## About the Windows warning
 
 The installer is **not code-signed yet**, so Windows SmartScreen may show "Windows protected your PC" the first time you run it. This notice appears for new or rarely downloaded apps. Click **More info**, then **Run anyway**. Code signing is planned; even a signed app can show the notice at first, because Windows builds trust from real downloads over time.
+
+## Startup speed
+
+- **The window and your tabs appear at once.** The terminal fills in as soon as the background service is ready; the app never waits for the service before showing itself.
+- **The very first launch after installing is the slowest,** because Windows scans a new, unsigned program. Later launches are quick.
+- **In Daemon mode the service keeps running when you close the window,** so reopening Bryt Shell reconnects instantly. Turn on **Settings, General, Start at login** and the service is already running when you sign in.
+- If the service cannot start, the notice says why and offers **Try again**. Details are saved in `%APPDATA%\Bryt Shell\daemon.log`.
+- The installer is a one-click installer: double-click it, wait a few seconds, and Bryt Shell opens. It installs for your account only, so it needs no administrator permission.
 
 ## Your data and privacy
 

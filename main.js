@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
 const { spawn, execSync } = require('child_process');
 const net = require('net');
 const fs = require('fs');
@@ -13,12 +13,20 @@ process.on('uncaughtException', (e) => {
 });
 
 let win, backend, notice = '';
+let backendReady = Promise.resolve();   // the window opens at once; anything that needs the terminals waits for this
 let closing = false; // true once we have decided what to do with the programs
 const states = {};   // tabId -> latest command state (idle/running/ok/fail/stopped), from either backend
 const recipesFile = () => path.join(root(), 'recipes.json');
 let tabs = [];
 
-const admin = (() => { try { execSync('net session', { stdio: 'ignore' }); return true; } catch { return false; } })();
+// Are we elevated? No child process on the normal path: it used to run `net session` here, before anything else.
+const admin = (() => {
+  if (process.platform !== 'win32') return false;
+  if (process.argv.includes('--bryt-admin')) return true;     // our own "Run as admin" button starts the elevated copy with this flag
+  try { fs.closeSync(fs.openSync('\\\\.\\PHYSICALDRIVE0', 'r')); return true; }   // only an elevated process may open the raw disk
+  catch (e) { if (e && (e.code === 'EPERM' || e.code === 'EACCES')) return false; }
+  try { execSync('net session', { stdio: 'ignore' }); return true; } catch { return false; }   // rare fallback: the old, slower check
+})();
 const profile = admin ? 'admin' : 'user'; // admin and normal workspaces are separate
 const root = () => app.getPath('userData');
 const base = () => { const d = path.join(root(), profile); fs.mkdirSync(d, { recursive: true }); return d; };
@@ -63,11 +71,23 @@ function ensureToken() {
   if (!fs.existsSync(f)) fs.writeFileSync(f, crypto.randomBytes(24).toString('hex'));
   return fs.readFileSync(f, 'utf8').trim();
 }
+const daemonLog = () => path.join(root(), 'daemon.log');
+let daemonWhy = '';
 function startDaemon() {
-  spawn(process.execPath, [path.join(__dirname, 'daemon.js'), base(), pipeName()], {
-    detached: true, stdio: 'ignore', windowsHide: true,
+  let out = 'ignore';
+  try {   // the background service writes what it prints into daemon.log, so a failure can explain itself
+    const f = daemonLog();
+    try { if (fs.statSync(f).size > 200 * 1024) fs.writeFileSync(f, ''); } catch {}
+    out = fs.openSync(f, 'a');
+    fs.writeSync(out, `\n--- ${new Date().toISOString()} starting the background service ${app.getVersion()} ---\n`);
+  } catch {}
+  const child = spawn(process.execPath, [path.join(__dirname, 'daemon.js'), base(), pipeName()], {
+    detached: true, stdio: ['ignore', out, out], windowsHide: true,
     env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
-  }).unref();
+  });
+  child.unref();
+  try { if (typeof out === 'number') fs.closeSync(out); } catch {}
+  return child;
 }
 function connectPipe(pipe, token) {
   return new Promise((resolve, reject) => {
@@ -83,6 +103,28 @@ function connectPipe(pipe, token) {
       m.t === 'ready' ? resolve({ sock: s, ver: m.ver || null }) : (s.destroy(), reject(new Error('auth')));
     });
   });
+}
+// Connect to the background service, starting it if needed. Polls quickly at first, waits up to 30 s (the first launch
+// after an install can be slow while Windows scans the new program), and notices at once if the service crashes.
+async function connectDaemon(pipe, token) {
+  try { return await connectPipe(pipe, token); } catch {}       // already running: instant
+  const child = startDaemon();
+  let exited = null, spawnErr = null;
+  child.once('exit', (c) => { exited = c == null ? -1 : c; });
+  child.once('error', (e) => { spawnErr = e; });
+  const t0 = Date.now();
+  while (Date.now() - t0 < 30000) {
+    await sleep(Date.now() - t0 < 3000 ? 100 : 250);
+    try { return await connectPipe(pipe, token); } catch {}
+    if (spawnErr || exited !== null) {
+      await sleep(300);                                          // it may have exited only because another copy already owns the pipe
+      try { return await connectPipe(pipe, token); } catch {}
+      daemonWhy = spawnErr ? spawnErr.message : 'the background service stopped right after it started (code ' + exited + ')';
+      return null;
+    }
+  }
+  daemonWhy = 'the background service did not answer within 30 seconds';
+  return null;
 }
 function remoteBackend(sock, onData, onExit, onLost, onState) {
   let buf = '', rid = 0; const waits = {};
@@ -123,20 +165,15 @@ async function initBackend() {
   if (readSettings().mode === 'daemon') {
     try {
       const token = ensureToken(), pipe = pipeName();
-      let conn;
-      try { conn = await connectPipe(pipe, token); }
-      catch {
-        startDaemon();
-        for (let i = 0; i < 30 && !conn; i++) { await sleep(250); try { conn = await connectPipe(pipe, token); } catch {} }
-      }
+      const conn = await connectDaemon(pipe, token);
       if (conn) {
         // A background service that survived an app update still runs the OLD code.
         if (conn.ver !== app.getVersion())
           notice = 'The background service is from an older version' + (conn.ver ? ' (' + conn.ver + ')' : '') + '. Your programs are still running, but Life lights and faces need the new version. Click "Quit & stop all", then reopen Bryt Shell.';
         backend = remoteBackend(conn.sock, onData, onExit, onLost, onState); return;
       }
-    } catch {}
-    notice = 'Daemon mode could not start, so this session is running in "Closes with window" mode.';
+    } catch (e) { daemonWhy = daemonWhy || String((e && e.message) || e); }
+    notice = 'Daemon mode could not start' + (daemonWhy ? ' (' + daemonWhy + ')' : '') + ', so this session is running in "Closes with window" mode. Details: ' + daemonLog();
   }
   backend = localBackend(onData, onExit, onState);
 }
@@ -144,11 +181,12 @@ async function initBackend() {
 app.setAppUserModelId('ug.brytma.shell'); // taskbar grouping + the name shown on notifications
 app.whenReady().then(async () => {
   loadTabs();
-  await initBackend();
+  backendReady = initBackend();     // starts in parallel with the window below: the window never waits for the background service
 
   // Started by Windows at login: bring the daemon up, start tabs that have a
   // startup command, then exit. No window. The daemon keeps running.
   if (process.argv.includes('--daemon-only')) {
+    await backendReady;
     if (backend.kind === 'daemon') {
       for (const t of tabs) if (t.startup) await backend.attach(t.id, opts(t.id, 100, 30));
       await sleep(2500); // let the daemon fire the startup commands
@@ -156,11 +194,16 @@ app.whenReady().then(async () => {
     app.quit(); return;
   }
 
+  if (app.isPackaged) Menu.setApplicationMenu(null);   // no menu bar to build in the installed app
   win = new BrowserWindow({
-    width: 1180, height: 760, minWidth: 980, minHeight: 560, backgroundColor: '#f4f5f7', title: 'Bryt Shell | BrytMa Tech Uganda',
+    width: 1180, height: 760, minWidth: 980, minHeight: 560, show: false,
+    backgroundColor: readSettings().bg || '#faf6ee',    // the colour of your theme, so the first frame is already right
+    title: 'Bryt Shell | BrytMa Tech Uganda',
     icon: path.join(__dirname, 'assets', 'icon.png'),
-    webPreferences: { preload: path.join(__dirname, 'preload.js') }
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), spellcheck: false }
   });
+  win.once('ready-to-show', () => win.show());
+  setTimeout(() => { try { if (win && !win.isDestroyed() && !win.isVisible()) win.show(); } catch {} }, 2500);
   win.setMenuBarVisibility(false);
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));          // the window never opens other pages
   win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) e.preventDefault(); });
@@ -195,16 +238,16 @@ ipcMain.handle('tabs:create', () => { const t = newTab('Tab ' + (tabs.length + 1
 ipcMain.handle('tabs:rename', (_, id, title) => { const t = tabs.find((x) => x.id === id); if (t) { t.title = title; saveTabs(); } });
 ipcMain.handle('tabs:startup', (_, id, cmd) => { const t = tabs.find((x) => x.id === id); if (t) { t.startup = cmd; saveTabs(); } });
 ipcMain.handle('tabs:delete', async (_, id) => {
-  await backend.del(id); delete states[id];
+  await backendReady; await backend.del(id); delete states[id];
   tabs = tabs.filter((x) => x.id !== id);
   if (!tabs.length) tabs.push(newTab('Tab 1'));
   saveTabs(); return tabs;
 });
-ipcMain.handle('pty:attach', (_, id, cols, rows) => backend.attach(id, opts(id, cols, rows)));
-ipcMain.handle('pty:ensure', (_, id, cols, rows) => backend.ensure(id, opts(id, cols, rows)));
-ipcMain.on('pty:write', (_, id, d) => backend.write(id, d));
-ipcMain.on('pty:resize', (_, id, c, r) => backend.resize(id, c, r));
-ipcMain.handle('log:clear', (_, id) => backend.clearLog(id));
+ipcMain.handle('pty:attach', async (_, id, cols, rows) => { await backendReady; return backend.attach(id, opts(id, cols, rows)); });
+ipcMain.handle('pty:ensure', async (_, id, cols, rows) => { await backendReady; return backend.ensure(id, opts(id, cols, rows)); });
+ipcMain.on('pty:write', (_, id, d) => { if (backend) backend.write(id, d); });
+ipcMain.on('pty:resize', (_, id, c, r) => { if (backend) backend.resize(id, c, r); });
+ipcMain.handle('log:clear', async (_, id) => { await backendReady; return backend.clearLog(id); });
 const ANSI = /\x1b\[[0-9;?]*[ -\/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[()][A-Z0-9]|\x1b[=>]/g;
 ipcMain.handle('log:export', async (_, id) => {
   const t = tabs.find((x) => x.id === id); if (!t) return null;
@@ -218,7 +261,7 @@ ipcMain.handle('log:export', async (_, id) => {
   fs.writeFileSync(r.filePath, r.filePath.endsWith('.log') ? raw : text);
   return r.filePath;
 });
-ipcMain.handle('app:info', () => ({ admin, mode: backend.kind, notice, closeAction: readSettings().closeAction || null }));
+ipcMain.handle('app:info', async () => { await backendReady; return { admin, mode: backend.kind, notice, closeAction: readSettings().closeAction || null }; });
 ipcMain.handle('life:states', () => states);
 ipcMain.handle('life:recipes', () => { ensureRecipes(recipesFile()); return shell.openPath(recipesFile()); });
 // Only these links can be opened from the window (support email and the project pages)
@@ -238,7 +281,7 @@ ipcMain.handle('app:resetClose', () => { const s = readSettings(); delete s.clos
 
 ipcMain.handle('app:setMode', async (_, mode) => {
   writeSettings({ ...readSettings(), mode });
-  await backend.shutdown();           // stops the old backend's programs; logs stay on disk
+  await backendReady; await backend.shutdown();           // stops the old backend's programs; logs stay on disk
   app.relaunch(); app.exit(0);
 });
 ipcMain.handle('app:autostart', (_, on) => {
@@ -247,9 +290,11 @@ ipcMain.handle('app:autostart', (_, on) => {
   if (on !== undefined) app.setLoginItemSettings({ openAtLogin: !!on, ...o });
   return app.getLoginItemSettings(o).openAtLogin;
 });
-ipcMain.handle('app:quitAll', async () => { closing = true; await backend.shutdown(); app.quit(); });
+ipcMain.handle('app:quitAll', async () => { closing = true; await backendReady; await backend.shutdown(); app.quit(); });
+ipcMain.handle('app:restart', () => { closing = true; app.relaunch(); app.exit(0); });   // used by the "Try again" button
+ipcMain.on('app:setBg', (_, c) => { if (typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c)) { const st = readSettings(); if (st.bg !== c) { st.bg = c; writeSettings(st); } } });
 ipcMain.handle('app:admin', () => new Promise((resolve) => {
-  const target = app.isPackaged ? '' : `-ArgumentList '"${app.getAppPath()}"'`;
+  const target = app.isPackaged ? `-ArgumentList '--bryt-admin'` : `-ArgumentList '"${app.getAppPath()}"','--bryt-admin'`;
   // Wait for Windows to answer the UAC prompt. Only close this window if the admin copy really started.
   const script = `try { Start-Process -FilePath '${process.execPath}' ${target} -Verb RunAs -ErrorAction Stop; exit 0 } catch { Write-Output $_.Exception.Message; exit 1 }`;
   const p = spawn('powershell.exe', ['-NoProfile', '-Command', script], { windowsHide: true });

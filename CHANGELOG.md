@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9.0 (2026-10)
+- **Much faster start-up.** The window and the tab strip now appear immediately (about half a second) instead of waiting for the background service, with a "Starting Bryt Shell" placeholder where the terminal will be. The app no longer spawns a Windows process just to check for administrator rights, and the window opens in your theme colour with no white flash
+- **Daemon mode now starts reliably.** The app used to give up on the background service after about 10 seconds, which is not enough on the first launch after an install. It now waits up to 30 seconds, notices straight away if the service crashes, and keeps a `daemon.log` so a failure explains itself. The notice has a **Try again** button
+- Bryt Shell reopens the tab you were using last
+- **One-click installer** (no wizard, per user, no administrator permission) with English-only Electron locales, so it is smaller and quicker to open
+
 ## 2.8.3 (2026-10)
 - **One-click, permanent download link:** the installer is now always named `Bryt-Shell-Setup.exe`, so `github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe` always downloads the newest version. The repo front page and the website both have a Download button that uses it
 

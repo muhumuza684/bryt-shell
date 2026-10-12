@@ -266,6 +266,11 @@ footer{color:var(--muted)}
 .sw1.custom{background:conic-gradient(#e5483c,#f5a33b,#e3d02f,#2fcf74,#2fb6cf,#5a5ae8,#c24bd6,#e5483c);overflow:hidden}
 .sw1.custom input{position:absolute;inset:-6px;width:44px;height:44px;opacity:0;cursor:pointer;border:0;padding:0}
 .swl{font-size:12px;color:var(--muted)}
+
+#boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;color:#9aa3b0;font:600 14px var(--font);letter-spacing:.02em}
+#boot i{width:14px;height:14px;border-radius:50%;border:2px solid #4a5160;border-top-color:var(--gold);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#boot i{animation:none}}
 #banner{display:none;border:2px solid var(--red);color:var(--red);background:var(--card);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700}
 footer{text-align:center;font-size:12px;color:var(--muted);padding-top:8px}
 </style></head><body>
@@ -438,7 +443,7 @@ footer{text-align:center;font-size:12px;color:var(--muted);padding-top:8px}
     </div>
     <div class="panel lifeonly"><h3>Recent</h3><ul class="ev" id="ev"></ul></div>
     </aside>
-    <div id="host">
+    <div id="host"><div id="boot"><i></i>Starting Bryt Shell&hellip;</div>
     <div id="sbar">
       <input id="sq" placeholder="Find in log">
       <button class="btn sm" id="sprev" title="Previous (Shift+Enter)">↑</button>
@@ -534,7 +539,7 @@ async function open(t){
 }
 
 async function select(id){
-  cur=id;render();
+  cur=id;try{localStorage.setItem('lastTab',id)}catch(e){}render();
   Object.entries(terms).forEach(([k,r])=>r.el.classList.toggle('on',k===id));
   const t=tabs.find(x=>x.id===id);
   if(!terms[id])await open(t);
@@ -735,6 +740,12 @@ function applyColors(){
   Object.values(terms).forEach(r=>{r.term.options.theme=TERM_THEME()});
   if(P.exp==='faith')applyCorners();
   syncColorUI();
+  syncBg();
+}
+let lastBg='';
+function syncBg(){   // remember the page colour, so the window's very first frame is already right at the next start
+  const c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(c)&&c!==lastBg){lastBg=c;if(typeof api!=='undefined'&&api.setBg)api.setBg(c)}
 }
 function buildSwatches(id,list,key){
   const box=$(id);
@@ -1089,7 +1100,9 @@ function bindSettings(){
 bindSettings();bindAppearance();
 
 (async()=>{
-  const info=await api.info();
+  applyTheme();                                   // your colours at once
+  tabs=await api.list();render();                 // the tab strip appears immediately, before the background service is ready
+  const info=await api.info();                    // waits for the background service (up to 30 s) without ever blocking the window
   curMode=info.mode;closeAction=info.closeAction;
   $('modeT').textContent=curMode==='daemon'?'Daemon':'Closes';
   $('modeEm').src='assets/emoji/'+(curMode==='daemon'?'devil':'sleep')+'.png';
@@ -1103,10 +1116,14 @@ bindSettings();bindAppearance();
     else $('autostart').checked=!!on;
   }else{$('autostart').disabled=true;$('autostartNote').textContent='Start at login works with Daemon mode. Change the mode above first.'}
   $('autostart').onchange=async()=>{const r=await api.autostart($('autostart').checked);if(r===null)$('autostart').checked=false};
-  if(info.notice)banner(info.notice);
+  if(info.notice){banner(info.notice);
+    if(/could not start/.test(info.notice)&&api.restartApp){const rb=document.createElement('button');rb.className='btn sm';rb.style.marginLeft='12px';rb.textContent='Try again';rb.onclick=()=>api.restartApp();$('banner').appendChild(rb)}}
   if(info.admin){$('admT').textContent='Running as admin';$('adm').disabled=true;$('adm').classList.add('adm-on')}
-  tabs=await api.list();st=(await api.states())||{};
+  st=(await api.states())||{};
   Object.keys(st).forEach(id=>{const x=st[id];if(x&&x.end&&x.s!=='running')addEvent(id,x)});
-  applyTheme();setExp(P.exp,true);select(tabs[0].id);setTimeout(syncExpUI,120);
+  applyTheme();setExp(P.exp,true);
+  let first=tabs[0].id;try{const l=localStorage.getItem('lastTab');if(l&&tabs.find(x=>x.id===l))first=l}catch(e){}
+  await select(first);const bt=$('boot');if(bt)bt.remove();
+  setTimeout(syncExpUI,120);
 })();
 </script></body></html>
