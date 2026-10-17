@@ -1,7 +1,7 @@
 {
   "name": "brytma-shell",
   "productName": "Bryt Shell",
-  "version": "2.9.0",
+  "version": "2.9.3",
   "description": "Bryt Shell: a tabbed, persistent PowerShell terminal for Windows. Built in Uganda by BrytMa Tech Uganda.",
   "author": "BrytMa Tech Uganda",
   "main": "main.js",

@@ -21,8 +21,8 @@ let tabs = [];
 
 // Are we elevated? No child process on the normal path: it used to run `net session` here, before anything else.
 const admin = (() => {
-  if (process.platform !== 'win32') return false;
-  if (process.argv.includes('--bryt-admin')) return true;     // our own "Run as admin" button starts the elevated copy with this flag
+  if (process.argv.includes('--bryt-admin')) return true;
+  if (process.platform !== 'win32') return false;     // our own "Run as admin" button starts the elevated copy with this flag
   try { fs.closeSync(fs.openSync('\\\\.\\PHYSICALDRIVE0', 'r')); return true; }   // only an elevated process may open the raw disk
   catch (e) { if (e && (e.code === 'EPERM' || e.code === 'EACCES')) return false; }
   try { execSync('net session', { stdio: 'ignore' }); return true; } catch { return false; }   // rare fallback: the old, slower check
@@ -107,7 +107,13 @@ function connectPipe(pipe, token) {
 // Connect to the background service, starting it if needed. Polls quickly at first, waits up to 30 s (the first launch
 // after an install can be slow while Windows scans the new program), and notices at once if the service crashes.
 async function connectDaemon(pipe, token) {
-  try { return await connectPipe(pipe, token); } catch {}       // already running: instant
+  try { return await connectPipe(pipe, token); }       // already running: instant
+  catch (e) {
+    if (e && e.message === 'timeout') {                  // something owns the pipe but never answers: a stuck service from an earlier session
+      appLog('the background service owns the pipe but does not answer (stuck); stopping it');
+      stopStuckService(); await sleep(500);
+    }
+  }
   const child = startDaemon();
   let exited = null, spawnErr = null;
   child.once('exit', (c) => { exited = c == null ? -1 : c; });
@@ -126,12 +132,22 @@ async function connectDaemon(pipe, token) {
   daemonWhy = 'the background service did not answer within 30 seconds';
   return null;
 }
+const HB_EVERY = +process.env.BRYT_HEARTBEAT_MS || 10000, HB_DEAD = HB_EVERY * 4.5;   // a live service answers in milliseconds; 45 s of silence means it is stuck
+const appLog = (m) => { try { fs.appendFileSync(daemonLog(), '[' + new Date().toISOString() + '] window: ' + m + '\n'); } catch {} };
+const lostError = (why) => Object.assign(new Error(why || 'the connection to the background service was lost'), { lost: true });
 function remoteBackend(sock, onData, onExit, onLost, onState) {
-  let buf = '', rid = 0; const waits = {};
-  const send = (m) => { try { sock.write(JSON.stringify(m) + '\n'); } catch {} };
+  let buf = '', rid = 0, dead = false, lastSeen = Date.now(); const waits = {};
+  const send = (m) => { if (dead) return false; try { sock.write(JSON.stringify(m) + '\n'); return true; } catch { return false; } };
+  const die = (why, hung) => {         // the connection is gone: everything that was waiting for an answer fails at once, instead of waiting forever
+    if (dead) return; dead = true; clearInterval(beat);
+    Object.keys(waits).forEach((k) => { clearTimeout(waits[k].t); waits[k].rej(lostError()); delete waits[k]; });
+    try { sock.destroy(); } catch {}
+    appLog('lost the connection to the background service' + (why ? ' (' + why + ')' : '') + '; ' + servicePidNote());
+    onLost(!!hung);
+  };
   sock.setEncoding('utf8');
   sock.on('data', (c) => {
-    buf += c; let i;
+    lastSeen = Date.now(); buf += c; let i;
     while ((i = buf.indexOf('\n')) >= 0) {
       const line = buf.slice(0, i); buf = buf.slice(i + 1);
       let m; try { m = JSON.parse(line); } catch { continue; }
@@ -139,29 +155,102 @@ function remoteBackend(sock, onData, onExit, onLost, onState) {
       else if (m.t === 'exit') onExit(m.id);
       else if (m.t === 'state') onState(m.id, m.st);
       else if (m.t === 'states') Object.keys(m.map).forEach((k) => onState(k, m.map[k]));
-      else if (m.t === 'log' && waits[m.rid]) { waits[m.rid](m.log); delete waits[m.rid]; }
+      else if (m.t === 'log' && waits[m.rid]) { clearTimeout(waits[m.rid].t); waits[m.rid].res(m.log); delete waits[m.rid]; }
     }
   });
-  sock.on('close', onLost); sock.on('error', () => {});
+  sock.on('close', () => die('the connection closed'));
+  sock.on('error', () => {});
+  const beat = setInterval(() => {
+    if (dead) return;
+    if (Date.now() - lastSeen > HB_DEAD) { die('no answer for ' + Math.round((Date.now() - lastSeen) / 1000) + ' s', true); return; }
+    send({ t: 'status' });
+  }, HB_EVERY);
+  if (beat.unref) beat.unref();
   send({ t: 'status' });   // learn the state of programs that kept running while the window was closed
   return {
     kind: 'daemon',
-    attach: (id, o) => new Promise((res) => { const r = ++rid; waits[r] = res; send({ t: 'attach', rid: r, ...o }); }),
-    ensure: async (id, o) => send({ t: 'ensure', ...o }),
-    write: (id, d) => send({ t: 'write', id, d }),
-    resize: (id, cols, rows) => send({ t: 'resize', id, cols, rows }),
-    del: async (id) => send({ t: 'delete', id }),
-    clearLog: async (id) => send({ t: 'clearLog', id }),
+    isDead: () => dead,
+    attach: (id, o) => new Promise((res, rej) => {
+      if (dead) return rej(lostError());
+      const r = ++rid;
+      const t = setTimeout(() => { delete waits[r]; rej(lostError('the background service did not answer')); die('it did not answer an attach request', true); }, 15000);
+      waits[r] = { res, rej, t };
+      if (!send({ t: 'attach', rid: r, ...o })) { clearTimeout(t); delete waits[r]; rej(lostError()); }
+    }),
+    ensure: async (id, o) => { if (!send({ t: 'ensure', ...o })) throw lostError(); },
+    write: (id, d) => { send({ t: 'write', id, d }); },
+    resize: (id, cols, rows) => { send({ t: 'resize', id, cols, rows }); },
+    del: async (id) => { send({ t: 'delete', id }); },
+    clearLog: async (id) => { send({ t: 'clearLog', id }); },
     shutdown: async () => { send({ t: 'shutdown' }); await sleep(400); }
   };
 }
 
-async function initBackend() {
-  const toWin = (ch) => (...a) => { if (win && !win.isDestroyed()) win.webContents.send(ch, ...a); };
-  const onData = toWin('data'), onExit = toWin('exit');
-  const onState = (id, st) => { if (st) states[id] = st; else delete states[id]; toWin('state')(id, st); };
-  const onLost = () => toWin('notice')('Lost connection to the background service. Close and reopen Bryt Shell.');
+const toWin = (ch) => (...a) => { if (win && !win.isDestroyed()) win.webContents.send(ch, ...a); };
+const onData = (...a) => toWin('data')(...a), onExit = (...a) => toWin('exit')(...a);
+const onState = (id, st) => { if (st) states[id] = st; else delete states[id]; toWin('state')(id, st); };
+function servicePidNote() {            // is the background service process still alive? (helps explain a drop)
+  try {
+    const pid = +fs.readFileSync(path.join(base(), 'daemon.pid'), 'utf8').trim();
+    if (!pid) return 'no service process id on file';
+    try { process.kill(pid, 0); return 'the service process (' + pid + ') is still running'; } catch (e) { return 'the service process (' + pid + ') is gone'; }
+  } catch { return 'no service process id on file'; }
+}
+let reconnecting = null;
+// The connection to the background service dropped. Instead of leaving the window stuck, reconnect to the service,
+// or start a fresh one; if that is impossible, carry on with the window's own terminals.
+function findServicePids() {        // fallback for services without a pid file (older versions): find them by their command line
+  try {
+    const dir = base();
+    if (process.platform === 'win32') {
+      const out = execSync('powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like \'*daemon.js*\' -and $_.CommandLine -like \'*' + dir.replace(/'/g, "''") + '*\' } | ForEach-Object { $_.ProcessId }"', { timeout: 8000, windowsHide: true }).toString();
+      return out.split(/\s+/).map(Number).filter((p) => p && p !== process.pid);
+    }
+    return execSync('pgrep -f "daemon.js .*' + dir.replace(/(["$`\\])/g, '\\$1') + '"').toString().split(/\s+/).map(Number).filter((p) => p && p !== process.pid);
+  } catch { return []; }
+}
+function stopStuckService() {   // a service that is alive but silent still owns the pipe: stop it so a fresh one can start
+  let killed = 0;
+  try {
+    const pid = +fs.readFileSync(path.join(base(), 'daemon.pid'), 'utf8').trim();
+    if (pid && pid !== process.pid) { process.kill(pid, 'SIGKILL'); killed++; appLog('stopped the stuck background service (' + pid + ')'); }
+  } catch {}
+  if (!killed) for (const pid of findServicePids()) { try { process.kill(pid, 'SIGKILL'); killed++; appLog('stopped a stuck background service found by its command line (' + pid + ')'); } catch {} }
+  if (process.platform !== 'win32') { try { fs.unlinkSync(pipeName()); } catch {} }   // (Windows pipes vanish with their process)
+  return killed;
+}
+function lostConnection(hung) {
+  if (closing || reconnecting) return;
+  if (hung) stopStuckService();
+  toWin('notice')('Lost connection to the background service. Reconnecting\u2026');
+  reconnecting = (async () => {
+    let conn = null;
+    for (let i = 0; i < 2 && !conn && !closing; i++) { conn = await connectDaemon(pipeName(), ensureToken()); if (!conn && !closing) await sleep(800); }
+    if (closing) return;
+    if (conn) {
+      backend = remoteBackend(conn.sock, onData, onExit, lostConnection, onState);
+      appLog('reconnected to the background service');
+      toWin('restored')(true);
+    } else {
+      appLog('could not reconnect' + (daemonWhy ? ' (' + daemonWhy + ')' : '') + '; continuing with this window\'s own terminals');
+      backend = localBackend(onData, onExit, onState);
+      toWin('notice')('The background service is unavailable, so this window now runs its own terminals ("Closes with window" mode). Try again to bring the service back.');
+      toWin('restored')(false);
+    }
+  })().finally(() => { reconnecting = null; });
+  backendReady = reconnecting;
+}
+// Run a request against the backend; if the connection drops meanwhile, wait for the reconnect and run it again.
+async function withBackend(fn) {
+  for (let i = 0; i < 4; i++) {
+    await backendReady;
+    try { return await fn(backend); }
+    catch (e) { if (e && e.lost && !closing) { if (reconnecting) await reconnecting; else await sleep(300); continue; } throw e; }
+  }
+  throw lostError('the background service is unavailable');
+}
 
+async function initBackend() {
   if (readSettings().mode === 'daemon') {
     try {
       const token = ensureToken(), pipe = pipeName();
@@ -170,7 +259,7 @@ async function initBackend() {
         // A background service that survived an app update still runs the OLD code.
         if (conn.ver !== app.getVersion())
           notice = 'The background service is from an older version' + (conn.ver ? ' (' + conn.ver + ')' : '') + '. Your programs are still running, but Life lights and faces need the new version. Click "Quit & stop all", then reopen Bryt Shell.';
-        backend = remoteBackend(conn.sock, onData, onExit, onLost, onState); return;
+        backend = remoteBackend(conn.sock, onData, onExit, lostConnection, onState); return;
       }
     } catch (e) { daemonWhy = daemonWhy || String((e && e.message) || e); }
     notice = 'Daemon mode could not start' + (daemonWhy ? ' (' + daemonWhy + ')' : '') + ', so this session is running in "Closes with window" mode. Details: ' + daemonLog();
@@ -179,7 +268,60 @@ async function initBackend() {
 }
 
 app.setAppUserModelId('ug.brytma.shell'); // taskbar grouping + the name shown on notifications
+// ---------- only one Bryt Shell at a time ----------
+// Several windows would share ONE background service, and closing any of them with "Stop everything" would kill it for the
+// others ("Lost connection"). So a second launch just brings the first window to the front and exits. The normal and the
+// administrator copy each have their own lock. The Windows-login copy (--daemon-only) has no window and takes no lock.
+const uiPipe = () => process.platform === 'win32' ? `\\\\.\\pipe\\brytma-shell-ui-${os.userInfo().username.replace(/\W/g, '_')}-${profile}` : path.join(os.tmpdir(), `brytma-shell-ui-${os.userInfo().username.replace(/\W/g, '_')}-${profile}.sock`);
+let uiServer = null, frontWhenReady = false;
+function bringToFront() {
+  appLog('another launch was started: bringing this window to the front');
+  if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); } else frontWhenReady = true;
+}
+function releaseSingleInstance() {   // let go of the lock BEFORE relaunching, so the new copy is not mistaken for a second launch
+  try { if (uiServer) uiServer.close(); } catch {}
+  uiServer = null;
+  if (process.platform !== 'win32') { try { fs.unlinkSync(uiPipe()); } catch {} }
+}
+function askOwner(pipe) {            // is another Bryt Shell running, and does it answer?  'ok' | 'bye' (it is closing) | 'none' | 'hung'
+  return new Promise((resolve) => {
+    const sk = net.connect(pipe); let done = false;
+    const end = (r) => { if (!done) { done = true; try { sk.destroy(); } catch {} resolve(r); } };
+    sk.setTimeout(2000, () => end('hung'));
+    sk.once('error', (e) => end(e && e.code === 'ECONNREFUSED' ? 'stale' : 'none'));   // 'stale': a socket file nobody listens on (never happens with Windows pipes)
+    sk.once('close', () => end('none'));
+    sk.once('connect', () => sk.write('focus\n'));
+    sk.once('data', (d) => end(/bye/.test(String(d)) ? 'bye' : 'ok'));
+  });
+}
+function stopStuckWindow() {         // the other copy holds the lock but never answers: it is stuck, stop it and take over
+  try {
+    const pid = +fs.readFileSync(path.join(base(), 'ui.pid'), 'utf8').trim();
+    if (pid && pid !== process.pid) { process.kill(pid, 'SIGKILL'); appLog('stopped an earlier Bryt Shell window that was stuck (' + pid + ')'); }
+  } catch {}
+  if (process.platform !== 'win32') { try { fs.unlinkSync(uiPipe()); } catch {} }
+}
+async function claimSingleInstance() {   // true: we are THE Bryt Shell; false: another one is running and was told to come forward
+  const pipe = uiPipe();
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let r = await askOwner(pipe);
+    if (r === 'stale') { await sleep(250); r = await askOwner(pipe); }       // maybe another launch is binding it at this very moment
+    if (r === 'ok') return false;
+    if (r === 'bye') { await sleep(700); continue; }                       // the other copy is closing right now: wait, then take over
+    if (r === 'hung') { stopStuckWindow(); await sleep(400); }
+    else if (r === 'stale' && process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch {} }   // a leftover socket file (Windows pipes vanish with their process)
+    const got = await new Promise((resolve) => {
+      const server = net.createServer((sock) => { sock.on('data', () => { try { sock.write(closing ? 'bye\n' : 'ok\n'); } catch {} if (!closing) bringToFront(); }); sock.on('error', () => {}); });
+      server.once('error', () => resolve(false));                          // two launches at the same instant: the other one won, ask it
+      server.listen(pipe, () => { uiServer = server; resolve(true); });
+    });
+    if (got) { try { fs.writeFileSync(path.join(base(), 'ui.pid'), String(process.pid)); } catch {} return true; }
+  }
+  return true;                                                             // could not decide: better to open than to show nothing
+}
+
 app.whenReady().then(async () => {
+  if (!process.argv.includes('--daemon-only') && !(await claimSingleInstance())) { app.exit(0); return; }
   loadTabs();
   backendReady = initBackend();     // starts in parallel with the window below: the window never waits for the background service
 
@@ -188,7 +330,7 @@ app.whenReady().then(async () => {
   if (process.argv.includes('--daemon-only')) {
     await backendReady;
     if (backend.kind === 'daemon') {
-      for (const t of tabs) if (t.startup) await backend.attach(t.id, opts(t.id, 100, 30));
+      for (const t of tabs) if (t.startup) { try { await backend.attach(t.id, opts(t.id, 100, 30)); } catch {} }
       await sleep(2500); // let the daemon fire the startup commands
     }
     app.quit(); return;
@@ -202,7 +344,7 @@ app.whenReady().then(async () => {
     icon: path.join(__dirname, 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), spellcheck: false }
   });
-  win.once('ready-to-show', () => win.show());
+  win.once('ready-to-show', () => { win.show(); if (frontWhenReady) win.focus(); });
   setTimeout(() => { try { if (win && !win.isDestroyed() && !win.isVisible()) win.show(); } catch {} }, 2500);
   win.setMenuBarVisibility(false);
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));          // the window never opens other pages
@@ -243,8 +385,8 @@ ipcMain.handle('tabs:delete', async (_, id) => {
   if (!tabs.length) tabs.push(newTab('Tab 1'));
   saveTabs(); return tabs;
 });
-ipcMain.handle('pty:attach', async (_, id, cols, rows) => { await backendReady; return backend.attach(id, opts(id, cols, rows)); });
-ipcMain.handle('pty:ensure', async (_, id, cols, rows) => { await backendReady; return backend.ensure(id, opts(id, cols, rows)); });
+ipcMain.handle('pty:attach', (_, id, cols, rows) => withBackend((b) => b.attach(id, opts(id, cols, rows))));
+ipcMain.handle('pty:ensure', (_, id, cols, rows) => withBackend((b) => b.ensure(id, opts(id, cols, rows))));
 ipcMain.on('pty:write', (_, id, d) => { if (backend) backend.write(id, d); });
 ipcMain.on('pty:resize', (_, id, c, r) => { if (backend) backend.resize(id, c, r); });
 ipcMain.handle('log:clear', async (_, id) => { await backendReady; return backend.clearLog(id); });
@@ -281,8 +423,9 @@ ipcMain.handle('app:resetClose', () => { const s = readSettings(); delete s.clos
 
 ipcMain.handle('app:setMode', async (_, mode) => {
   writeSettings({ ...readSettings(), mode });
+  closing = true;
   await backendReady; await backend.shutdown();           // stops the old backend's programs; logs stay on disk
-  app.relaunch(); app.exit(0);
+  releaseSingleInstance(); app.relaunch(); app.exit(0);
 });
 ipcMain.handle('app:autostart', (_, on) => {
   if (!app.isPackaged) return null; // only meaningful in the installed app
@@ -291,7 +434,7 @@ ipcMain.handle('app:autostart', (_, on) => {
   return app.getLoginItemSettings(o).openAtLogin;
 });
 ipcMain.handle('app:quitAll', async () => { closing = true; await backendReady; await backend.shutdown(); app.quit(); });
-ipcMain.handle('app:restart', () => { closing = true; app.relaunch(); app.exit(0); });   // used by the "Try again" button
+ipcMain.handle('app:restart', () => { closing = true; releaseSingleInstance(); app.relaunch(); app.exit(0); });   // used by the "Try again" button
 ipcMain.on('app:setBg', (_, c) => { if (typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c)) { const st = readSettings(); if (st.bg !== c) { st.bg = c; writeSettings(st); } } });
 ipcMain.handle('app:admin', () => new Promise((resolve) => {
   const target = app.isPackaged ? `-ArgumentList '--bryt-admin'` : `-ArgumentList '"${app.getAppPath()}"','--bryt-admin'`;

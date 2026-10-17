@@ -23,7 +23,7 @@ Tabbed, named, persistent terminals for Windows, with live status lights, a test
 
 <p align="center">
   <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%2010%2F11-0b57a4">
-  <img alt="Version" src="https://img.shields.io/badge/version-2.9.0-0b57a4">
+  <img alt="Version" src="https://img.shields.io/badge/version-2.9.3-0b57a4">
   <img alt="Built with" src="https://img.shields.io/badge/built%20with-Electron%20%2B%20xterm.js-0b57a4">
 </p>
 
@@ -231,6 +231,7 @@ The result is `dist\Bryt-Shell-Setup.exe`. The build writes the icon and version
 
 - **One-click download (always the newest version):** https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe
 - **Releases page:** https://github.com/muhumuza684/bryt-shell/releases/latest
+- **From inside the app:** Settings, About, **Download the newest version** opens that same download in your browser. The app never contacts the internet by itself.
 - **Website:** https://muhumuza684.github.io/bryt-shell/
 - The installer is built by GitHub from this public source code and attached to each [release](https://github.com/muhumuza684/bryt-shell/releases).
 
@@ -246,6 +247,10 @@ The result must match the text in the `.sha256` file.
 
 If this folder is not a git repository yet, run `.\setup-github.ps1` once. It checks git, connects the folder to `https://github.com/muhumuza684/bryt-shell`, commits your files and pushes them. It never overwrites work that is already on GitHub unless you add `-Force`, and `-DryRun` shows what it would do.
 
+### Keeping GitHub tidy (maintainers)
+
+`.\cleanup-github.ps1` removes old releases (and their tags) and old build runs, which also frees the 70 MB build files they hold. It always keeps the newest release and the newest build. It needs the GitHub CLI (`winget install GitHub.cli`, then `gh auth login`). Run `-DryRun` first to see the list; it asks you to type DELETE before deleting anything.
+
 ### Publishing a new version (maintainers)
 
 1. Raise the version in `package.json` and commit.
@@ -256,12 +261,20 @@ If this folder is not a git repository yet, run `.\setup-github.ps1` once. It ch
 
 The installer is **not code-signed yet**, so Windows SmartScreen may show "Windows protected your PC" the first time you run it. This notice appears for new or rarely downloaded apps. Click **More info**, then **Run anyway**. Code signing is planned; even a signed app can show the notice at first, because Windows builds trust from real downloads over time.
 
+## Only one Bryt Shell at a time
+
+Click the shortcut once or ten times: only **one** Bryt Shell opens, and the extra clicks just bring the open window to the front. This matters because every window shares one background service, and closing one window with "Stop everything" used to cut the service off for the others ("Lost connection").
+
+- The copy that starts at Windows login (no window) and the **Run as admin** copy are separate and never get in each other's way.
+- If an earlier window is frozen and no longer answers, the next launch replaces it.
+- If an old background service is stuck (alive but silent) after a restart or crash, Bryt Shell now stops it and starts a fresh one, instead of waiting for it and needing a reboot.
+
 ## Startup speed
 
 - **The window and your tabs appear at once.** The terminal fills in as soon as the background service is ready; the app never waits for the service before showing itself.
 - **The very first launch after installing is the slowest,** because Windows scans a new, unsigned program. Later launches are quick.
 - **In Daemon mode the service keeps running when you close the window,** so reopening Bryt Shell reconnects instantly. Turn on **Settings, General, Start at login** and the service is already running when you sign in.
-- If the service cannot start, the notice says why and offers **Try again**. Details are saved in `%APPDATA%\Bryt Shell\daemon.log`.
+- **If the background service ever stops, Bryt Shell heals itself.** It reconnects, or starts a fresh service, and re-attaches your terminals within a second or two, so you can keep working and creating tabs. If a service cannot be brought back, the window carries on with its own terminals and offers **Try again**. What happened is written to `%APPDATA%\Bryt Shell\daemon.log`.
 - The installer is a one-click installer: double-click it, wait a few seconds, and Bryt Shell opens. It installs for your account only, so it needs no administrator permission.
 
 ## Your data and privacy
@@ -297,6 +310,7 @@ flowchart LR
 | `reinstall-desktop.ps1` / `.bat` | Uninstall the old desktop app, build and open a fresh installer |
 | `release.ps1` | Create the version tag and push it so GitHub builds and publishes the installer |
 | `setup-github.ps1` | First-time setup: connect this folder to GitHub and push your code safely |
+| `cleanup-github.ps1` | Delete old releases, tags and build runs on GitHub (keeps the newest) |
 | `.github/workflows/release.yml` | The GitHub build that publishes the installer and its checksum |
 | `assets/` | Emoji images and window icon |
 | `docs/` | Landing page (GitHub Pages) and screenshots |

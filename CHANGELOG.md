@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.9.3 (2026-10)
+- **Only one Bryt Shell can run.** Clicking the shortcut several times used to open several windows that shared one background service, so closing one with "Stop everything" cut the others off ("Lost connection") and could leave things stuck until a reboot. Extra launches now just bring the open window to the front. The copy that starts at Windows login and the Run as admin copy are separate, a frozen earlier window is replaced, and restarting from "Try again" or a mode change releases the lock first
+- **A stuck background service is cleaned up at start-up** (found by its process id, or by its command line for older versions) instead of being waited on for 30 seconds and never removed
+
+## 2.9.2 (2026-10)
+- **Fixed: "Lost connection to the background service. Close and reopen Bryt Shell", and being unable to create a tab afterwards.** Two causes: the service exited on *any* pipe error for as long as it ran (it now survives them), and when the connection dropped the app waited forever and never recovered. Now the app notices at once (a heartbeat also catches a stuck service), reconnects or starts a fresh service, re-attaches your terminals and carries on. If no service can be started, the window continues with its own terminals and offers **Try again**
+- The service now records its whole life in `daemon.log` (start, connections, errors, why it exited), and opening a terminal can no longer hang the window
+- **Settings, About, "Download the newest version"** opens the latest installer in your browser (the app still never contacts the internet by itself), with a "What's new" link
+- **Cleanup:** removed nine unused emoji images left over from the scenes removed in 2.6.0, and the redundant `build-installer.bat`
+- **cleanup-github.ps1:** deletes old releases, tags and build runs on GitHub, keeping the newest of each
+
 ## 2.9.0 (2026-10)
 - **Much faster start-up.** The window and the tab strip now appear immediately (about half a second) instead of waiting for the background service, with a "Starting Bryt Shell" placeholder where the terminal will be. The app no longer spawns a Windows process just to check for administrator rights, and the window opens in your theme colour with no white flash
 - **Daemon mode now starts reliably.** The app used to give up on the background service after about 10 seconds, which is not enough on the first launch after an install. It now waits up to 30 seconds, notices straight away if the service crashes, and keeps a `daemon.log` so a failure explains itself. The notice has a **Try again** button

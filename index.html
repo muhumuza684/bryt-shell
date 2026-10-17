@@ -377,6 +377,9 @@ footer{text-align:center;font-size:12px;color:var(--muted);padding-top:8px}
       </ul>
       <h3>System details</h3><div class="kv" id="aboutKV"></div>
       <h3>Built with</h3><p class="lead">Electron, xterm.js, Windows ConPTY (@lydell/node-pty), Microsoft Fluent Emoji (MIT) and a lot of care.</p>
+      <h3>Get the newest version</h3><p class="lead">Opens the download in your browser. The app itself never contacts the internet to check for updates. Install it over this one; your tabs, logs and settings are kept.</p>
+      <button class="btn sm primary" id="openLatest">Download the newest version</button> <button class="btn sm" id="openNotes">What's new</button>
+      <h3>Links</h3>
       <button class="btn sm" id="openGH">Source code on GitHub</button> <button class="btn sm" id="openSite">Website</button>
     </section>
 
@@ -533,7 +536,7 @@ async function open(t){
     return true});
   term.onData(d=>{if(rec.dead){rec.dead=false;api.ensure(t.id,term.cols,term.rows);return}api.write(t.id,d)});
   term.onResize(({cols,rows})=>api.resize(t.id,cols,rows));
-  const log=await api.attach(t.id,term.cols,term.rows);
+  let log='';try{log=await api.attach(t.id,term.cols,term.rows)}catch(e){term.write('\r\n\x1b[31m[could not reach the terminal: '+((e&&e.message)||e)+']\x1b[0m\r\n')}
   if(log){term.write(log);term.write('\r\n\x1b[2m--- session restored ---\x1b[0m\r\n',()=>{rec.live=true})}
   else rec.live=true;
 }
@@ -1094,11 +1097,39 @@ function bindSettings(){
   $('supCopy').onclick=()=>{copyText(SUPPORT);flash($('supCopy'),'Copied')};
   $('supInfo').onclick=async()=>{copyText(await sysText());flash($('supInfo'),'Copied')};
   $('supFaq').onclick=()=>showPane('faq');
+  $('openLatest').onclick=()=>api.openExternal('https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe');
+  $('openNotes').onclick=()=>api.openExternal('https://github.com/muhumuza684/bryt-shell/releases/latest');
   $('openGH').onclick=()=>api.openExternal('https://github.com/muhumuza684/bryt-shell');
   $('openSite').onclick=()=>api.openExternal('https://muhumuza684.github.io/bryt-shell/');
 }
 bindSettings();bindAppearance();
 
+/* ---------- the background service dropped and came back (or was replaced by this window's own terminals) ---------- */
+const hideBanner=()=>{$('banner').style.display='none'};
+function addRetry(m){   // notices that end in "Try again" get a button that restarts the app
+  if(!/Try again/.test(m)||!api.restartApp)return;
+  const b=document.createElement('button');b.className='btn sm';b.style.marginLeft='12px';b.textContent='Try again';b.onclick=()=>api.restartApp();$('banner').appendChild(b);
+}
+async function reattachAll(ok){
+  if(ok)hideBanner();
+  else{   // the service could not be brought back: this window now runs its own terminals, and the chip says so
+    $('modeT').textContent='Closes';$('modeEm').src='assets/emoji/sleep.png';
+    $('quitall').style.display='none';const qr=$('quitRow');if(qr)qr.style.display='none';
+  }
+  for(const id of Object.keys(terms)){
+    const r=terms[id];
+    try{
+      r.dead=false;r.live=false;r.term.reset();
+      const log=await api.attach(id,r.term.cols,r.term.rows);
+      if(log)r.term.write(log);
+      r.term.write('\r\n\x1b[2m--- reconnected ---\x1b[0m\r\n',()=>{r.live=true});
+    }catch(e){r.live=true}
+  }
+  try{st=(await api.states())||{}}catch(e){}
+  paintAll();
+}
+if(api.onRestored)api.onRestored(reattachAll);
+if(api.onNotice)api.onNotice(addRetry);
 (async()=>{
   applyTheme();                                   // your colours at once
   tabs=await api.list();render();                 // the tab strip appears immediately, before the background service is ready

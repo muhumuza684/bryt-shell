@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('api', {
   onExit: (cb) => ipcRenderer.on('exit', (_, id) => cb(id)),
   states: inv('life:states'), openRecipes: inv('life:recipes'),
   onState: (cb) => ipcRenderer.on('state', (_, id, st) => cb(id, st)),
-  onNotice: (cb) => ipcRenderer.on('notice', (_, m) => cb(m))
+  onNotice: (cb) => ipcRenderer.on('notice', (_, m) => cb(m)),
+  onRestored: (cb) => ipcRenderer.on('restored', (_, ok) => cb(ok))
 });
