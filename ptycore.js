@@ -189,6 +189,7 @@ class PtyManager {
       name: 'xterm-256color', cols: o.cols || 100, rows: o.rows || 30, cwd, env, useConpty: true
     });
     this.ptys[id] = p;
+    (this.sz = this.sz || {})[id] = [o.cols || 100, o.rows || 30];
     this.st[id] = { s: 'idle' }; this.emit(id);
     p.onData((d) => { this.queue(id, d); this.track(id, d); this.onData(id, d); });
     p.onExit(() => {
@@ -204,8 +205,14 @@ class PtyManager {
     if (s && s.s === 'running' && d.indexOf('\x03') !== -1) this.intr[id] = true; // you pressed Ctrl+C
     if (this.ptys[id]) this.ptys[id].write(d);
   }
-  resize(id, c, r) { if (this.ptys[id] && c > 0 && r > 0) try { this.ptys[id].resize(c, r); } catch {} }
+  // A resize that changes nothing is skipped: every real resize makes PowerShell redraw its prompt, which shows up as blank prompts.
+  resize(id, c, r) {
+    if (!this.ptys[id] || !(c > 0 && r > 0)) return;
+    const z = (this.sz = this.sz || {})[id];
+    if (z && z[0] === c && z[1] === r) return;
+    try { this.ptys[id].resize(c, r); this.sz[id] = [c, r]; } catch {}
+  }
   kill(id) { if (this.ptys[id]) { try { this.ptys[id].kill(); } catch {} delete this.ptys[id]; } delete this.st[id]; delete this.act[id]; }
   killAll() { Object.keys(this.ptys).forEach((id) => this.kill(id)); this.flush(); }
 }
-module.exports = { PtyManager, ensureRecipes, DEFAULT_RECIPES };
+module.exports = { PtyManager, ensureRecipes, DEFAULT_RECIPES, findShell };

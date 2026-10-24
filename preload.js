@@ -13,5 +13,13 @@ contextBridge.exposeInMainWorld('api', {
   states: inv('life:states'), openRecipes: inv('life:recipes'),
   onState: (cb) => ipcRenderer.on('state', (_, id, st) => cb(id, st)),
   onNotice: (cb) => ipcRenderer.on('notice', (_, m) => cb(m)),
-  onRestored: (cb) => ipcRenderer.on('restored', (_, ok) => cb(ok))
+  onRestored: (cb) => ipcRenderer.on('restored', (_, ok) => cb(ok)),
+  aiGet: inv('ai:get'), aiSet: inv('ai:set'), aiConfig: inv('ai:config'), aiAudit: inv('ai:audit'), aiLog: inv('ai:log'), aiAnswer: inv('ai:answer'), aiAccessSet: inv('ai:access-set'), aiAccessPreset: inv('ai:access-preset'), aiStop: inv('ai:stop'), aiTrustAdd: inv('ai:trust-add'), aiTrustRemove: inv('ai:trust-remove'),
+  inboxGet: inv('inbox:get'), inboxFolder: inv('inbox:folder'), inboxName: inv('inbox:name'), inboxPreview: inv('inbox:preview'), inboxDismiss: inv('inbox:dismiss'), onInbox: (cb) => ipcRenderer.on('inbox', (_, q) => cb(q)),
+  liveGet: inv('live:get'), liveSetRelay: inv('live:set-relay'), liveShareStart: inv('live:share-start'), liveShareStop: inv('live:share-stop'), liveWatch: inv('live:watch'), liveUnwatch: inv('live:unwatch'), onLive: (cb) => ipcRenderer.on('live', (_, m) => cb(m)),
+  pkgSend: inv('pkg:send'), pkgOpen: inv('pkg:open'), pkgImport: inv('pkg:import'), pkgReveal: inv('pkg:reveal'),
+  onAiAsk: (cb) => ipcRenderer.on('aiask', (_, q) => cb(q)), onAiAskCancel: (cb) => ipcRenderer.on('aiaskcancel', (_, q) => cb(q)),
+  aiClients: inv('ai:clients'), aiConnectAll: inv('ai:connect-all'), aiOfferNo: inv('ai:offer-no'), onAiOffer: (cb) => ipcRenderer.on('aioffer', (_, q) => cb(q)), aiConnect: inv('ai:connect'), aiCheck: inv('ai:check'),
+  onTabs: (cb) => ipcRenderer.on('tabs', (_, list) => cb(list)),
+  onAi: (cb) => ipcRenderer.on('ai', (_, s) => cb(s))
 });

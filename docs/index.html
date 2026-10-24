@@ -72,7 +72,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
 
 <section><div class="wrap">
   <h2>See it work</h2>
-  <p class="sub">This is "Life" (choose it in the top bar), running here in your browser. Press a button.</p>
+  <p class="sub">This is "Lab" (choose it in the top bar), running here in your browser. Press a button.</p>
   <div class="demo" id="demo">
     <div class="signal" aria-label="Status lights">
       <div class="hous"><div class="lamp lr" id="lr"></div><div class="lamp lo" id="lo"></div><div class="lamp lg" id="lg"></div></div>
@@ -118,7 +118,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
     <div class="card"><h3>Run as admin</h3><p>One click opens an elevated workspace with its own tabs and logs, kept separate from your normal ones.</p></div>
     <div class="card"><h3>A running engine</h3><p>Choose Engine and a real-looking engine fills the left and right of the window. It spins while your command runs and jams, with sparks, when it fails.</p></div>
     <div class="card"><h3>Faith, tucked into Settings</h3><p>Optional Christian or Islamic styling with three styles each, King James or Arabic verses, and a place to paste your own verses. Hidden until you switch it on.</p></div>
-    <div class="card"><h3>One experience at a time</h3><p>Plain, Life or Engine from the header, Faith from Settings. Choosing one turns the others off, so the window never feels crowded.</p></div>
+    <div class="card"><h3>One experience at a time</h3><p>Plain, Lab or Engine from the header, Faith from Settings. Choosing one turns the others off, so the window never feels crowded.</p></div>
     <div class="card"><h3>Your colors, kept tidy</h3><p>Three themes (Ivory, White, Black) and, folded away under Appearance, an accent color picker and a terminal color picker. Buttons are bright and clear in every theme.</p></div>
     <div class="card"><h3>Private by design</h3><p>No accounts and no network connections of its own. Everything stays on your PC.</p></div>
   </div>
@@ -126,10 +126,10 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
 
 <section><div class="wrap">
   <h2>What it looks like</h2>
-  <p class="sub">Real screenshots of the Ivory design: the engine filling the window, a failed command in Life, the Appearance page with its folded-away colors, Faith inside Settings with the paste-your-verses editor, and the black theme with an Arabic verse.</p>
+  <p class="sub">Real screenshots of the Ivory design: the engine filling the window, a failed command in Lab, the Appearance page with its folded-away colors, Faith inside Settings with the paste-your-verses editor, and the black theme with an Arabic verse.</p>
   <div class="grid shots">
     <a href="screenshots/engine.jpg"><img src="screenshots/engine.jpg" alt="Bryt Shell with the engine running in the left and right columns"></a>
-    <a href="screenshots/life.jpg"><img src="screenshots/life.jpg" alt="Life after a failed command: red light and crying face"></a>
+    <a href="screenshots/life.jpg"><img src="screenshots/life.jpg" alt="Lab after a failed command: red light and crying face"></a>
     <a href="screenshots/appearance.jpg"><img src="screenshots/appearance.jpg" alt="Settings, Appearance: themes and color pickers"></a>
     <a href="screenshots/settings-faith.jpg"><img src="screenshots/settings-faith.jpg" alt="Settings, Faith page with My verses"></a>
     <a href="screenshots/faith-islam-dark.jpg"><img src="screenshots/faith-islam-dark.jpg" alt="The black theme with the Islamic Midnight style and an Arabic verse"></a>
@@ -150,7 +150,7 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
   <ol class="steps">
     <li>Download <a href="https://github.com/muhumuza684/bryt-shell/releases/latest/download/Bryt-Shell-Setup.exe"><code>Bryt-Shell-Setup.exe</code></a> (one click, always the newest version; all versions are on the <a href="https://github.com/muhumuza684/bryt-shell/releases/latest">releases page</a>).</li>
     <li>Run it. If Windows says "Windows protected your PC", click <b>More info</b>, then <b>Run anyway</b>.</li>
-    <li>Open <b>Bryt Shell</b> from the desktop shortcut. Choose <b>Life</b> or <b>Engine</b> in the top bar to turn on the lights or the running engine.</li>
+    <li>Open <b>Bryt Shell</b> from the desktop shortcut. Choose <b>Lab</b> or <b>Engine</b> in the top bar to turn on the lights or the running engine.</li>
   </ol>
   <p class="sub">Prefer building it yourself? The <a href="https://github.com/muhumuza684/bryt-shell#build-from-source">README</a> has the exact steps.</p>
 </div></section>
@@ -174,9 +174,9 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 40px}
   <details><summary>How do I name, rename or delete a tab?</summary><p>Click <b>+</b> and type a name. Double-click a tab to rename it. Click the <b>×</b> on a tab to delete it; its saved log is deleted too, after you confirm.</p></details>
   <details><summary>How do I run a command automatically when a tab starts?</summary><p>Click <b>Startup command</b>, type the command (for example <code>docker compose up</code>) and press OK. It runs whenever that tab's shell starts, including after a restart. In the installed app with Daemon mode, Settings, General, Start at login runs those tabs silently when you sign in.</p></details>
   <details><summary>How do I run as administrator?</summary><p>Click <b>Run as admin</b> and accept the Windows permission prompt. Bryt Shell reopens as administrator with its own separate tabs and logs, so elevated sessions never mix with normal ones.</p></details>
-  <details><summary>What do the lights, the test tube and the faces mean?</summary><p>Choose Life in the top bar (or in Settings, Life). Life, Engine and Faith are one-at-a-time experiences, so choosing one turns the others off. The traffic light covers all tabs: red if any tab failed, orange if any is running, green if all finished fine. The test tube shows the active tab: it fills as the command runs, turns green on success and red with a pin where it failed. The faces are a smile when idle, a thinking face while running, happy on success, crying on failure, and neutral when you stopped it yourself with Ctrl+C. A command you stop yourself is never counted as an error.</p></details>
+  <details><summary>What do the lights, the test tube and the faces mean?</summary><p>Choose Lab in the top bar (or in Settings, Lab). Lab, Engine and Faith are one-at-a-time experiences, so choosing one turns the others off. The traffic light covers all tabs: red if any tab failed, orange if any is running, green if all finished fine. The test tube shows the active tab: it fills as the command runs, turns green on success and red with a pin where it failed. The faces are a smile when idle, a thinking face while running, happy on success, crying on failure, and neutral when you stopped it yourself with Ctrl+C. A command you stop yourself is never counted as an error.</p></details>
   <details><summary>How does Bryt Shell know a command failed?</summary><p>At each prompt PowerShell knows whether the last command succeeded. Bryt Shell starts every shell with a small wrapper that prints standard OSC 133 marks when a command starts and finishes, including that success flag, and reads them. Your own prompt (for example oh-my-posh) keeps working.</p></details>
-  <details><summary>How do I teach the test tube my own commands?</summary><p>Settings, Life, <b>Edit level recipes</b> opens <code>recipes.json</code>. A recipe has a <code>match</code> pattern for the command and a list of levels, each with an <code>on</code> pattern that is looked for in the output. A level counts as reached the first time its pattern appears. Unknown commands show a steady tube and turn green or red when they finish.</p></details>
+  <details><summary>How do I teach the test tube my own commands?</summary><p>Settings, Lab, <b>Edit level recipes</b> opens <code>recipes.json</code>. A recipe has a <code>match</code> pattern for the command and a list of levels, each with an <code>on</code> pattern that is looked for in the output. A level counts as reached the first time its pattern appears. Unknown commands show a steady tube and turn green or red when they finish.</p></details>
   <details><summary>Why is PowerShell stronger than most people think? (objects, not text)</summary><p>PowerShell's pipeline passes live .NET objects, not plain text. <code>Get-Process | Where-Object CPU -gt 100 | Sort-Object CPU -Descending | Select-Object -First 5 Name, CPU</code> filters and sorts by real properties, with no text parsing and no fragile column cutting.</p></details>
   <details><summary>Can PowerShell manage other computers?</summary><p>Yes. <code>Invoke-Command -ComputerName server01 -ScriptBlock { Get-Service }</code> runs commands on another machine (PowerShell remoting), and PowerShell 7 can also remote over SSH with <code>Enter-PSSession -HostName</code>. One script can manage many machines at once.</p></details>
   <details><summary>Can PowerShell use the whole .NET platform?</summary><p>Yes. Any .NET class is available: <code>[System.IO.Path]::GetTempPath()</code>, <code>[guid]::NewGuid()</code>, <code>[Math]::Round(3.14159, 2)</code>, and <code>Add-Type</code> can even compile C# on the fly. That is why PowerShell can do jobs other shells need extra tools for.</p></details>

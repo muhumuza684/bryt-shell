@@ -1,25 +1,29 @@
 {
   "name": "brytma-shell",
   "productName": "Bryt Shell",
-  "version": "2.9.3",
+  "version": "2.10.0",
   "description": "Bryt Shell: a tabbed, persistent PowerShell terminal for Windows. Built in Uganda by BrytMa Tech Uganda.",
   "author": "BrytMa Tech Uganda",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis",
+    "test:ai": "node test/ai-selftest.js && node test/connect-selftest.js && node test/pack-selftest.js && node test/ask-selftest.js && node test/inbox-selftest.js && node test/live-selftest.js"
   },
   "dependencies": {
-    "@xterm/xterm": "^5.5.0",
+    "@lydell/node-pty": "1.2.0-beta.15",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-search": "^0.15.0",
-    "@lydell/node-pty": "1.2.0-beta.15"
+    "@xterm/xterm": "^5.5.0",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "electron": "^31.0.0",
     "electron-builder": "^25.0.0",
-    "resedit": "^3.1.0",
-    "pe-library": "^2.0.1"
+    "pe-library": "^2.0.1",
+    "resedit": "^3.1.0"
   },
   "build": {
     "appId": "ug.brytma.shell",
@@ -54,6 +58,13 @@
       "main.js",
       "daemon.js",
       "ptycore.js",
+      "aiapi.js",
+      "aiclients.js",
+      "aiask.js",
+      "aipack.js",
+      "aiinbox.js",
+      "aiLive.js",
+      "mcp/**",
       "preload.js",
       "index.html",
       "package.json",

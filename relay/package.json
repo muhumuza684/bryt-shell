@@ -1,0 +1,9 @@
+{
+  "name": "bryt-shell-relay",
+  "version": "1.0.0",
+  "description": "Encrypted message relay for Bryt Shell live watch. It cannot read what it forwards.",
+  "main": "relay.js",
+  "scripts": { "start": "node relay.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "ws": "^8.18.0" }
+}

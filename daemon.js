@@ -43,6 +43,7 @@ function handle(sock, m) {
       (subs[m.id] = subs[m.id] || new Set()).add(sock);
       const log = mgr.readLog(m.id);       // read, subscribe and spawn in one tick:
       mgr.ensure(m.id, m);                 // no output is lost or duplicated
+      mgr.resize(m.id, m.cols, m.rows);    // a tab started by an AI app learns this window's real size
       send(sock, { t: 'log', rid: m.rid, log });
       break;
     }
