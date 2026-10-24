@@ -433,6 +433,9 @@ flowchart LR
 - **Notifications and the live clock need the window open.** In Daemon mode the programs keep running when it is closed, but "Notify when done" is cleared.
 - **Admin is a separate workspace**, not a per-tab switch.
 - **Lab, Engine and Faith are one at a time.** Choosing one turns the others off.
+- **The newest features have had the least real-world testing.** AI access, the Access and Web switches, project packages and the project inbox are covered by automated tests, but the parts that talk to Windows directly (Recycle Bin, closing apps, opening a browser, OneDrive or Dropbox folders) have so far been tried on one PC. **Live watch** has been tested on one computer against a local relay, not yet across two networks. Please report problems under Issues.
+- **The Access and Web switches are a guard-rail, not a sandbox.** They stop the AI tools and the common PowerShell commands, but a determined command can find another way. Connect only AI apps you trust.
+- **Live watch needs a relay that you run yourself** (see `relay/README.md`). Nothing is hosted for you.
 
 ## Roadmap
 

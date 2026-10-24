@@ -4,3 +4,4 @@ dist/
 .DS_Store
 Thumbs.db
 .bryt-backup-*/
+relay/node_modules/
